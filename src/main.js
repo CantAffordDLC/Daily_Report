@@ -1,47 +1,36 @@
 const { invoke } = window.__TAURI__.tauri;
 
-let greetInputEl;
-let greetMsgEl;
+function addTask() {
 
-async function greet() {
-  // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-  greetMsgEl.textContent = await invoke("greet", { name: greetInputEl.value });
+  var taskInput = $('#task');
+  if (taskInput.val() != null && taskInput.val != "") {
+
+    var table = $('#taskTable');
+    var newRow = $('<tr>');
+    var itemCell = $('<td>').text(taskInput.val());
+    var actionCell = $('<td>');
+    var deleteButton = $('<button>', {
+      type: 'button',
+      class: 'btn btn-outline-danger delete-btn',
+      html: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+      class="bi bi-x-circle-fill" viewBox="0 0 16 16">
+      <path
+      d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293z">
+      </path>
+      </svg>`
+    });
+    actionCell.append(deleteButton);
+    newRow.append(itemCell);
+    newRow.append(actionCell);
+
+    table.append(newRow);
+
+    taskInput.val("");
+  }
 }
 
-window.addEventListener("DOMContentLoaded", () => {
-  greetInputEl = document.querySelector("#greet-input");
-  greetMsgEl = document.querySelector("#greet-msg");
-  document.querySelector("#greet-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-    greet();
+$(document).ready(function () {
+  $('#taskTable').on('click', '.delete-btn', function () {
+    $(this).closest('tr').remove();
   });
 });
-
-function addTask() {
-  const taskInput = document.getElementById('task');
-  const taskValue = taskInput.value.trim();
-
-  if (taskValue === '') {
-    alert('Task cannot be empty!');
-    return;
-  }
-
-  const taskList = document.getElementById('task-list');
-
-  const listItem = document.createElement('li');
-  const taskSpan = document.createElement('span');
-  taskSpan.textContent = taskValue;
-  
-  const deleteButton = document.createElement('button');
-  deleteButton.textContent = 'Delete';
-  deleteButton.classList.add('delete-button');
-  deleteButton.onclick = function() {
-    taskList.removeChild(listItem);
-  };
-
-  listItem.appendChild(taskSpan);
-  listItem.appendChild(deleteButton);
-  taskList.appendChild(listItem);
-
-  taskInput.value = '';
-}
