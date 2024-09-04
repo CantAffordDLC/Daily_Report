@@ -33,4 +33,13 @@ $(document).ready(function () {
   $('#taskTable').on('click', '.delete-btn', function () {
     $(this).closest('tr').remove();
   });
+
+  const dropdown = document.getElementById("DayTypeDropdown");
+
+  for(const type in DayType){
+    const option = document.createElement("option");
+    option.value = DayType[type];
+    option.text = type;
+    dropdown.appendChild(option);
+  }
 });
