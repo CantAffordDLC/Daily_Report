@@ -2,31 +2,44 @@ const { invoke } = window.__TAURI__.tauri;
 
 function addTask() {
 
-  var taskInput = $('#task');
-  if (taskInput.val() != null && taskInput.val != "") {
+  const taskInput = document.getElementById('taskInput');
+  const taskList = document.getElementById('task-list');
+  const taskText = taskInput.value;
 
-    var table = $('#taskTable');
-    var newRow = $('<tr>');
-    var itemCell = $('<td>').text(taskInput.val());
-    var actionCell = $('<td>');
-    var deleteButton = $('<button>', {
-      type: 'button',
-      class: 'btn btn-outline-danger delete-btn',
-      html: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
-      class="bi bi-x-circle-fill" viewBox="0 0 16 16">
-      <path
-      d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0M5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293z">
-      </path>
-      </svg>`
-    });
-    actionCell.append(deleteButton);
-    newRow.append(itemCell);
-    newRow.append(actionCell);
-
-    table.append(newRow);
-
-    taskInput.val("");
+  if (taskText === "") {
+      alert("Please enter a task");
+      return;
   }
+
+  // Create a new task item
+  const taskItem = document.createElement('div');
+  taskItem.classList.add('task-item');
+
+  // Create a paragraph element for the task text
+  const taskDescription = document.createElement('p');
+  taskDescription.textContent = taskText;
+
+  // Create an icon for the completed task
+  const statusIcon = document.createElement('span');
+  statusIcon.classList.add('status-icon');
+  statusIcon.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
+
+  // Add event listener to mark the task as completed
+  statusIcon.addEventListener('click', function () {
+    // Find the task item container and remove it
+    const taskItem = this.closest('.task-item'); // Get the closest parent task-item element
+    taskItem.remove(); // Remove the task item from the DOM
+});
+
+  // Append elements to taskItem
+  taskItem.appendChild(taskDescription);
+  taskItem.appendChild(statusIcon);
+
+  // Add the task to the task list
+  taskList.appendChild(taskItem);
+
+  // Clear the input field
+  taskInput.value = "";
 }
 
 $(document).ready(function () {
@@ -42,4 +55,9 @@ $(document).ready(function () {
     option.text = type;
     dropdown.appendChild(option);
   }
+});
+
+$('.status-icon').click(function() {
+  $(this).find('i').toggleClass('bi-check-circle-fill bi-circle');
+  $(this).closest('.task-item').find('.task-text').toggleClass('completed');
 });

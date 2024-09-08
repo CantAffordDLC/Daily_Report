@@ -65,7 +65,8 @@ body {
   }
 
 input[type="text"] {
-    width: 70%; /* Adjust as needed */
+    width: 80%; /* Adjust as needed */
+    height: 40px;
     padding: 10px 40px 10px 15px;
     border-radius: 30px;
     border: 1px solid #000000;
@@ -78,8 +79,17 @@ input[type="text"]::placeholder {
     color: #aaa;
 }
 
+.input-wrapper {
+  position: relative; 
+  display: inline-block;
+  width: 100%; 
+  margin-right: 20px;
+  align-items: center;
+}
+
 select {
   width: 10%; /* Adjust as needed */
+  height: 40px;
   padding: 10px 40px 10px 15px;
   border-radius: 20px;
   border: 1px solid #000000;
@@ -113,16 +123,51 @@ button.submit-btn i{
   transform: translate(-50%, -50%); /* Offset to center the icon perfectly */
 }
 
-.input-wrapper {
-  position: relative; 
-  display: inline-block;
-  width: 100%; 
-}
-
 .tableContainer{
   height: 300px;
+  margin-right: 40px;
+  width: 100%;
 }
 
 .row {
   margin-left: 20px;
+}
+
+
+/* Task list styling */
+.task-list {
+  margin-bottom: 20px;
+}
+
+.task-item {
+    width: 100%; /* Adjust as needed */
+    height: 40px; /* Adjust as needed */
+    padding: 10px 15px 10px 15px;
+    border-radius: 30px;
+    border: 1px solid #000000;
+    font-size: 16px;
+    outline: none;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+}
+
+.task-item p {
+  margin: 0;
+  font-weight: normal;
+  color: #333;
+}
+
+.task-item .status-icon {
+  opacity: 0;  /* Icon is initially hidden (fully transparent) */
+  transition: opacity 0.3s ease-in-out;  /* Add a smooth transition effect */
+  color: red;
+  font-size: 22px;
+}
+
+.task-item:hover .status-icon{
+
+  opacity: 1;  /* Icon is initially hidden (fully transparent) */
+  transition: opacity 0.3s ease-in-out;  /* Add a smooth transition effect */
 }
