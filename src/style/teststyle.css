@@ -97,6 +97,69 @@ select {
   outline: none;
   box-sizing: border-box;
 }
+.DayTypeDropdown {
+  width: 10%; /* Adjust as needed */
+  height: 40px;
+  padding: 10px 15px; /* Adjust padding for correct alignment */
+  border-radius: 20px;
+  border: 1px solid #000000;
+  font-size: 16px;
+  outline: none;
+  box-sizing: border-box;
+  position: relative;
+  cursor: pointer;
+  background-color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Space between text and dropdown icon */
+}
+
+.selected-option {
+  padding: 0; /* Adjust to fit the DayTypeDropdown box */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.selected-option i {
+  margin-right: 10px;
+}
+
+.dropdown-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  position: absolute;
+  top: 100%; /* Dropdown appears right below the selected option */
+  left: 0;
+  width: 100%;
+  border: 1px solid #ccc;
+  display: none; /* Hidden initially */
+  background: white;
+  z-index: 100; /* Ensure dropdown is on top */
+  border-radius: 0 0 20px 20px; /* Rounded bottom for dropdown */
+}
+
+.dropdown-list li {
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.dropdown-list li:hover {
+  background-color: #f0f0f0;
+}
+
+.dropdown-list li i {
+  margin-right: 10px;
+}
+
+/* Add a style for the icon inside the dropdown */
+.DayTypeDropdown i {
+  pointer-events: none; /* Prevent the icon from catching clicks */
+}
 
 button.submit-btn {
   margin-left: -50px;
@@ -151,6 +214,7 @@ button.submit-btn i{
     display: flex;
     justify-content: space-between;
     align-items: center; 
+    margin-bottom: 5px;
 }
 
 .task-item p {

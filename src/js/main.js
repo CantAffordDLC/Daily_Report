@@ -7,8 +7,8 @@ function addTask() {
   const taskText = taskInput.value;
 
   if (taskText === "") {
-      alert("Please enter a task");
-      return;
+    alert("Please enter a task");
+    return;
   }
 
   // Create a new task item
@@ -29,7 +29,7 @@ function addTask() {
     // Find the task item container and remove it
     const taskItem = this.closest('.task-item'); // Get the closest parent task-item element
     taskItem.remove(); // Remove the task item from the DOM
-});
+  });
 
   // Append elements to taskItem
   taskItem.appendChild(taskDescription);
@@ -48,16 +48,60 @@ $(document).ready(function () {
   });
 
   const dropdown = document.getElementById("DayTypeDropdown");
+  const dropdownList = $('#dropdownList');
 
-  for(const type in DayType){
-    const option = document.createElement("option");
+  for (const type in DayType) {
+
+    var iconClass = "";
+
+    if (type === 'FERIAS') {
+      iconClass = 'fas fa-umbrella-beach';
+    } else if (type === 'FERIADO') {
+      iconClass = 'fas fa-flag';
+    } else if (type === 'WORKDAY') {
+      iconClass = 'fas fa-briefcase';
+    }
+
+    const listItem = `<li>
+                      <i class="${iconClass}"></i> ${type}
+                      </li>`;
+
+    dropdownList.append(listItem);
+
+    /*const option = document.createElement("option");
     option.value = DayType[type];
     option.text = type;
-    dropdown.appendChild(option);
+    dropdown.appendChild(option); */
   }
+
+  $('.selected-option').click(function() {
+    $('#dropdownList').toggle();
+  });
+
+  $('#dropdownList li').click(function() {
+    // Get the selected value and icon
+    var selectedValue = $(this).data('value');
+    var selectedIconClass = $(this).find('i').attr('class');
+    var selectedText = $(this).text().trim();
+
+    // Update the displayed selected option with the corresponding icon and text
+    $('#currentIcon').attr('class', selectedIconClass);
+    $('#selectedOption').html('<i id="currentIcon" class="' + selectedIconClass + '"></i> ' + selectedText);
+
+    // Hide the dropdown after selection
+    $('#dropdownList').hide();
+  });
+
+  // Hide the dropdown when clicking outside
+  $(document).click(function(e) {
+    if (!$(e.target).closest('.custom-dropdown').length) {
+      $('#dropdownList').hide();
+    }
+  });
+
 });
 
-$('.status-icon').click(function() {
+$('.status-icon').click(function () {
   $(this).find('i').toggleClass('bi-check-circle-fill bi-circle');
   $(this).closest('.task-item').find('.task-text').toggleClass('completed');
 });

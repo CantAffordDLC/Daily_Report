@@ -18,20 +18,18 @@
       <div class="row">
             <div class="headerContainer">
               <h2 class="title">Daily Tasks</h2>
-              <p class="date">21/01/2024</p>
+              <p class="date" id="dateDisplay">21/01/2024</p>
             </div>
             <div class="tableContainer">
               <div id="task-list" class="task-list">
-                <div class="task-item">
-                  <p class="">Uma task</p>
-                  <span class="status-icon">
-                    <i class="bi bi-x-circle-fill"></i>
-                  </span>
-              </div>
               </div>
             </div>
             <div class="input-wrapper">
-              <select id="DayTypeDropdown"></select>
+              <div class="DayTypeDropdown">
+                <div id="selectedOption" class="selected-option">
+                </div>
+                <ul id="dropdownList" class="dropdown-list"></ul>
+              </div>
               <input type="text" id="taskInput" placeholder="Enter a new task...">
               <button onclick="addTask()" class="submit-btn"><i class="bi bi-arrow-right-circle-fill"></i></button>
             </div>
