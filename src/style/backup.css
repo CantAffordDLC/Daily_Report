@@ -1,0 +1,163 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f2f2f2;
+  }
+  
+  .container {
+    width: 500px;
+    margin: 50px auto;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  .headerContainer {
+    margin-top: 20px;
+    width: 100%;
+    text-align: left;
+}
+  h2.title {
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-weight: bold;
+  }
+  
+  .date {
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-size: 18px;
+    color: #777;
+    margin-top: -10px;
+  }
+  
+  .message {
+    text-align: center;
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 20px;
+  }
+  
+  /* .input-container {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 10px;
+  }
+  
+  input[type="text"] {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    font-size: 16px;
+  }*/
+  
+  input[type="text"]:focus {
+    outline: none;
+  } 
+  
+  button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+input[type="text"] {
+    width: 80%; /* Adjust as needed */
+    height: 40px;
+    padding: 10px 40px 10px 15px;
+    border-radius: 30px;
+    border: 1px solid #000000;
+    font-size: 16px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+input[type="text"]::placeholder {
+    color: #aaa;
+}
+
+.input-wrapper {
+  position: relative; 
+  display: inline-block;
+  width: 100%; 
+  margin-right: 20px;
+  align-items: center;
+}
+
+button.submit-btn {
+  margin-left: -50px;
+  transform: translateY(-10%); 
+  height: 40px;
+  width: 40px;
+  background: transparent;
+  border: 0;
+  border: none;
+  align-items: center; /* Center vertically */
+  cursor: pointer;
+}
+
+button.submit-btn i:hover {
+    color: #525252;
+}
+
+button.submit-btn i{
+  position: absolute;
+  color: #000000;
+  font-size: 24px;
+  top: 50%; /* Vertically center the icon */
+  left: 50%; /* Horizontally center the icon */
+  transform: translate(-50%, -50%); /* Offset to center the icon perfectly */
+}
+
+.tableContainer{
+  height: 300px;
+  margin-right: 40px;
+  width: 100%;
+}
+
+.row {
+  margin-left: 20px;
+}
+
+
+/* Task list styling */
+.task-list {
+  margin-bottom: 20px;
+}
+
+.task-item {
+    width: 100%; /* Adjust as needed */
+    height: 40px; /* Adjust as needed */
+    padding: 10px 15px 10px 15px;
+    border-radius: 30px;
+    border: 1px solid #000000;
+    font-size: 16px;
+    outline: none;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: center; 
+    margin-bottom: 5px;
+}
+
+.task-item p {
+  margin: 0;
+  font-weight: normal;
+  color: #333;
+}
+
+.task-item .status-icon {
+  opacity: 0;  /* Icon is initially hidden (fully transparent) */
+  transition: opacity 0.3s ease-in-out;  /* Add a smooth transition effect */
+  color: red;
+  font-size: 22px;
+}
+
+.task-item:hover .status-icon{
+
+  opacity: 1;  /* Icon is initially hidden (fully transparent) */
+  transition: opacity 0.3s ease-in-out;  /* Add a smooth transition effect */
+}

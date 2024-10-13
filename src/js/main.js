@@ -48,7 +48,7 @@ $(document).ready(function () {
   });
 
   const dropdown = document.getElementById("DayTypeDropdown");
-  const dropdownList = $('#dropdownList');
+  const dropdownList = $('.dropdown-menu');
 
   for (const type in DayType) {
 
@@ -62,9 +62,9 @@ $(document).ready(function () {
       iconClass = 'fas fa-briefcase';
     }
 
-    const listItem = `<li>
+    const listItem = `<a class="dropdown-item">
                       <i class="${iconClass}"></i> ${type}
-                      </li>`;
+                      </a>`;
 
     dropdownList.append(listItem);
 
@@ -74,7 +74,7 @@ $(document).ready(function () {
     dropdown.appendChild(option); */
   }
 
-  $('.selected-option').click(function() {
+/*   $('.selected-option').click(function() {
     $('#dropdownList').toggle();
   });
 
@@ -90,14 +90,14 @@ $(document).ready(function () {
 
     // Hide the dropdown after selection
     $('#dropdownList').hide();
-  });
+  }); */
 
   // Hide the dropdown when clicking outside
-  $(document).click(function(e) {
+/*   $(document).click(function(e) {
     if (!$(e.target).closest('.custom-dropdown').length) {
       $('#dropdownList').hide();
     }
-  });
+  }); */
 
 });
 
