@@ -4,12 +4,21 @@ function addTask() {
 
   const taskInput = document.getElementById('taskInput');
   const taskList = document.getElementById('task-list');
+  const icon = document.getElementById('submitIcon');
   const taskText = taskInput.value;
+
+  icon.classList.add("bounce");
+  
+  icon.addEventListener('animationend', function() {
+      icon.classList.remove("bounce");
+  });
 
   if (taskText === "") {
     alert("Please enter a task");
     return;
   }
+
+  submit.classList.add('fa-bounce')
 
   // Create a new task item
   const taskItem = document.createElement('div');
@@ -22,7 +31,7 @@ function addTask() {
   // Create an icon for the completed task
   const statusIcon = document.createElement('span');
   statusIcon.classList.add('status-icon');
-  statusIcon.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
+  statusIcon.innerHTML = '<i class="fa fa-times-circle"></i>';
 
   // Add event listener to mark the task as completed
   statusIcon.addEventListener('click', function () {
@@ -99,9 +108,4 @@ $(document).ready(function () {
     }
   }); */
 
-});
-
-$('.status-icon').click(function () {
-  $(this).find('i').toggleClass('bi-check-circle-fill bi-circle');
-  $(this).closest('.task-item').find('.task-text').toggleClass('completed');
 });

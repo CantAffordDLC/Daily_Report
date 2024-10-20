@@ -1,3 +1,5 @@
+
+
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -53,10 +55,10 @@ body {
   
   input[type="text"]:focus {
     outline: none;
+    height: 15%;
   } 
   
-  button {
-    background-color: #4CAF50;
+  button {  
     color: white;
     padding: 10px 15px;
     border: none;
@@ -81,19 +83,21 @@ input[type="text"]::placeholder {
 
 .input-wrapper {
   position: relative; 
-  display: inline-block;
+  display: flex; /* Use flexbox for layout */
   width: 100%; 
   margin-right: 20px;
-  align-items: center;
+  align-items: center; /* Align items vertically in the center */
+  gap: 2px; /* Add spacing between the dropdown, input, and button */
 }
 
 .dropdown{
-  width: 15%; /* Adjust as needed */
+  width: 12%; /* Adjust as needed */
   height: 40px;
+  transition: width 0.3s ease;
 }
 
 .dropdown-toggle {
-  width: 80%; /* Adjust as needed */
+  width: 100%; /* Adjust as needed */
   padding: 10px 15px; /* Adjust padding for correct alignment */
   border-radius: 20px;
   border: 1px solid #000000;
@@ -106,11 +110,10 @@ input[type="text"]::placeholder {
   display: flex;
   align-items: center;
   justify-content: space-between; /* Space between text and dropdown icon */
-  transition: width 0.3s ease; /* Smooth transition for width change */
 }
 
-.dropdown:hover .dropdown-toggle {
-  width: 100%; /* Expand width on hover to show the arrow */
+.dropdown:hover {
+  width: 15%; /* Expand width on hover to show the arrow */
 }
 
 .dropdown-toggle .fas {
@@ -137,15 +140,16 @@ input[type="text"]::placeholder {
   opacity: 1; /* Show arrow on hover */
 }
 
+.dropdown-menu{
+  border-left: 4px solid transparent; /* Left border for arrow */
+  border-right: 4px solid transparent; /* Right border for arrow */
+  border-radius: 20px;
+  font-size: 16px;
+}
+
 button.submit-btn {
   margin-left: -50px;
-  transform: translateY(-10%); 
-  height: 40px;
-  width: 40px;
   background: transparent;
-  border: 0;
-  border: none;
-  align-items: center; /* Center vertically */
   cursor: pointer;
 }
 
@@ -154,12 +158,8 @@ button.submit-btn i:hover {
 }
 
 button.submit-btn i{
-  position: absolute;
   color: #000000;
   font-size: 24px;
-  top: 50%; /* Vertically center the icon */
-  left: 50%; /* Horizontally center the icon */
-  transform: translate(-50%, -50%); /* Offset to center the icon perfectly */
 }
 
 .tableContainer{
@@ -202,7 +202,7 @@ button.submit-btn i{
 .task-item .status-icon {
   opacity: 0;  /* Icon is initially hidden (fully transparent) */
   transition: opacity 0.3s ease-in-out;  /* Add a smooth transition effect */
-  color: red;
+  color: rgb(0, 0, 0);
   font-size: 22px;
 }
 
