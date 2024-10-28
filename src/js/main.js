@@ -1,5 +1,11 @@
 const { invoke } = window.__TAURI__.tauri;
 
+const DayType = {
+  FERIAS: "Ferias",
+  FERIADO: "Feriado",
+  WORKDAY: "Work Day"
+};
+
 function addTask() {
 
   const taskInput = document.getElementById('taskInput');
@@ -76,17 +82,21 @@ $(document).ready(function () {
                       </a>`;
 
     dropdownList.append(listItem);
-
-    /*const option = document.createElement("option");
-    option.value = DayType[type];
-    option.text = type;
-    dropdown.appendChild(option); */
   }
 
-/*   $('.selected-option').click(function() {
-    $('#dropdownList').toggle();
+
+  $('#dropdownOptions').on('click', '.dropdown-item', function(e) {
+    e.preventDefault();
+    
+    // Get the clicked option (this) and retrieve the icon class and label text
+    const selectedOption = $(this);
+    const iconClass = selectedOption.find('i').attr('class');
+  
+    // Update the button content
+    $('#dropdownMenuButton').html(`<i class="${iconClass}"></i>`);
   });
 
+<<<<<<< Updated upstream
   $('#dropdownList li').click(function() {
     // Get the selected value and icon
     var selectedValue = $(this).data('value');
@@ -108,4 +118,11 @@ $(document).ready(function () {
     }
   }); */
 
+=======
+});
+
+$('.status-icon').click(function () {
+  $(this).find('i').toggleClass('bi-check-circle-fill bi-circle');
+  $(this).closest('.task-item').find('.task-text').toggleClass('completed');
+>>>>>>> Stashed changes
 });
