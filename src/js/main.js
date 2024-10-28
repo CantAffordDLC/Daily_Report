@@ -10,31 +10,37 @@ function addTask() {
 
   const taskInput = document.getElementById('taskInput');
   const taskList = document.getElementById('task-list');
-  const icon = document.getElementById('submitIcon');
+  const icon = document.getElementById('iconContainer');
+  let className = $('#iconContainer').attr('class');
   const taskText = taskInput.value;
-
+/*
   icon.classList.add("bounce");
   
   icon.addEventListener('animationend', function() {
       icon.classList.remove("bounce");
   });
+  submit.classList.add('fa-bounce')
+  */
 
   if (taskText === "") {
     alert("Please enter a task");
     return;
   }
 
-  submit.classList.add('fa-bounce')
-
   // Create a new task item
   const taskItem = document.createElement('div');
   taskItem.classList.add('task-item');
+
+
+  const itemIcon = document.createElement('span');
+  itemIcon.id ='icon-item';
+  itemIcon.innerHTML = '<i class="'+ className +'"></i>';
 
   // Create a paragraph element for the task text
   const taskDescription = document.createElement('p');
   taskDescription.textContent = taskText;
 
-  // Create an icon for the completed task
+  // Icon to remove taskItem
   const statusIcon = document.createElement('span');
   statusIcon.classList.add('status-icon');
   statusIcon.innerHTML = '<i class="fa fa-times-circle"></i>';
@@ -47,6 +53,7 @@ function addTask() {
   });
 
   // Append elements to taskItem
+  taskItem.appendChild(itemIcon);
   taskItem.appendChild(taskDescription);
   taskItem.appendChild(statusIcon);
 
@@ -93,10 +100,9 @@ $(document).ready(function () {
     const iconClass = selectedOption.find('i').attr('class');
   
     // Update the button content
-    $('#dropdownMenuButton').html(`<i class="${iconClass}"></i>`);
+    $('#dropdownMenuButton').html(`<i id="iconContainer" class="${iconClass}"></i>`);
   });
-
-<<<<<<< Updated upstream
+/*
   $('#dropdownList li').click(function() {
     // Get the selected value and icon
     var selectedValue = $(this).data('value');
@@ -118,11 +124,9 @@ $(document).ready(function () {
     }
   }); */
 
-=======
 });
 
 $('.status-icon').click(function () {
   $(this).find('i').toggleClass('bi-check-circle-fill bi-circle');
   $(this).closest('.task-item').find('.task-text').toggleClass('completed');
->>>>>>> Stashed changes
 });
