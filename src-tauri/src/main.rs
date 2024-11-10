@@ -20,7 +20,7 @@ fn get_current_date() -> String {
 
 fn main() {
     tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![greet, get_current_date]) // Register both commands
+    .invoke_handler(tauri::generate_handler![greet, get_current_date, RecieverTaskObj::receive_tasks]) // Register both commands
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

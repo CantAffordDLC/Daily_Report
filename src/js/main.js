@@ -130,3 +130,32 @@ $('.status-icon').click(function () {
   $(this).find('i').toggleClass('bi-check-circle-fill bi-circle');
   $(this).closest('.task-item').find('.task-text').toggleClass('completed');
 });
+
+$('#extractButton').click(function(){
+  // Create an array to store the objects
+  const taskArray = [];
+  let type; 
+
+  // Loop through each element with the class 'task-item'
+  $('.task-item').each(function() {
+      // Find the <i> inside the <span> within the task-item
+      const icon = $(this).find('span i').attr('class');
+
+      // Find the <p> outside the <span> within the task-item
+      const text = $(this).find('p').text();
+
+      if (icon === 'fas fa-umbrella-beach') {
+        type = 'FERIAS';
+      } else if (icon === 'fas fa-flag') {
+        type === 'FERIADO';
+      } else if (icon === 'fas fa-briefcase') {
+        type = 'WORKDAY';
+      }
+
+      // Add an object with the icon and paragraph content to the array
+      taskArray.push({
+          icon: type || null,  // Gets the HTML inside the <i> or null if empty
+          text: text || null   // Gets the text inside the <p> or null if empty
+      });
+  });
+})
