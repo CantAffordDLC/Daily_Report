@@ -1,5 +1,6 @@
 #[derive(Deserialize)]
 struct RecieverItemObj {
+    date: String,
     icon: String,
     text: String,
 }
@@ -7,7 +8,7 @@ struct RecieverItemObj {
 
 // Define a command to receive the data from JavaScript
 #[tauri::command]
-fn receive_tasks(recievedtasks: Vec<TaskItem>) {
+pub fn receive_tasks(recievedtasks: Vec<TaskItem>) {
     
     let time = 7.5 / recievedtasks.len();
     let mut daytype;
@@ -24,7 +25,7 @@ fn receive_tasks(recievedtasks: Vec<TaskItem>) {
             daytype = DayType::WorkDay;
         }
 
-        tasks.push(Task::new(daytype, task.text, time));
+        tasks.push(Task::new(date, daytype, task.text, time));
         // Here, you could process or store the data as needed
     }
 }
