@@ -215,17 +215,18 @@ button.submit-btn i{
 
 .extract-button{
   position: absolute; /* Make button positionable within the container */
-  top: 0; /* Align it to the top */
+  top: 10%; /* Align it to the top */
   right: 13%; /* Align it to the right */
   width: 20%; /* Adjust width as needed */
   height: 40%; /* Adjust height as needed */
   padding: 5px 5px; /* Adjust padding for a smaller button */
   border-radius: 30px;
-  border: 1px solid #000000;
-  font-size: 10px; /* Adjust font size for better fit */
+  border: 1px solid;
+  font-size: 11px; /* Adjust font size for better fit */
   color: #fff;
   outline: none;
   box-sizing: border-box;
-  background-color: #000000; /* Ensure it has a background color */
+  background-color: #4d8350; /* Ensure it has a background color */
   cursor: pointer;
+  font-family: "Helvetica", "Arial", sans-serif;
 }

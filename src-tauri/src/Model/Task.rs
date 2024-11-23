@@ -1,4 +1,5 @@
 use std::fs::{File, OpenOptions};
+use tauri::api::path::app_data_dir;
 use std::path::Path;
 use xlsxwriter::Workbook;
 use umya_spreadsheet::{Spreadsheet, Worksheet, Cell, Row, Style, Color, Fill, PatternFill, writer::xlsx};
@@ -21,7 +22,7 @@ struct Task {
 
 impl Task {
     // Constructor method for Task
-    fn new(day_type: DayType, description: String, time: u32) -> Task {
+    fn new(day_type: DayType, description: String, time: u32, date: Datetime) -> Task {
         Task {
             day_type,
             description,
@@ -31,8 +32,12 @@ impl Task {
     }
 
     
-    fn export_to_excel(tasks: Vec<Task>, filename: &str) {
-        let path = format!("{}.xlsx", filename);
+    pub fn export_to_excel(tasks: Vec<Task>) {
+        let app_data_dir = app_data_dir().unwrap().join("daily_report");
+    
+        // Resolve CSV file path
+        std::fs::create_dir_all(app_data_dir.join("data")).expect("Failed to create data directory");
+        let path = app_data_dir.join("data").join("teste.xlsx");
         let file_exists = Path::new(&path).exists();
         
         // Create or load the workbook

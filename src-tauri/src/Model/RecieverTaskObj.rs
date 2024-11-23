@@ -1,3 +1,5 @@
+use serde::Deserialize;
+
 #[derive(Deserialize)]
 struct RecieverItemObj {
     date: String,
@@ -8,7 +10,7 @@ struct RecieverItemObj {
 
 // Define a command to receive the data from JavaScript
 #[tauri::command]
-pub fn receive_tasks(recievedtasks: Vec<TaskItem>) {
+pub fn receive_tasks(recievedtasks: Vec<RecieverItemObj>) {
     
     let time = 7.5 / recievedtasks.len();
     let mut daytype;
@@ -28,4 +30,5 @@ pub fn receive_tasks(recievedtasks: Vec<TaskItem>) {
         tasks.push(Task::new(date, daytype, task.text, time));
         // Here, you could process or store the data as needed
     }
+    Task::export_to_excel(tasks);
 }

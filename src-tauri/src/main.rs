@@ -1,7 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 use chrono::Local;
-mod ReceiverTaskObj;
+mod Model {
+    pub mod RecieverTaskObj; // This imports the ReceiverTaskObj from the Model subfolder
+}// Correctly use the module
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
 
 #[tauri::command]
