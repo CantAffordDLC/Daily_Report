@@ -1,8 +1,15 @@
+use std::path::Path;
+use std::fs::File;
+use std::io::Write;
 use chrono::NaiveDate;
-use calamine::{Excel, open_workbook_auto, Range, Writer, Xlsx, Row, Cell, open_workbook};
-use std::fs::{File, create_dir_all};
-use std::path::{Path, PathBuf};
+use csv::Writer;
 use tauri::api::path::app_data_dir;
+use directories::{ProjectDirs, BaseDirs};
+
+
+
+
+//use calamine::{Excel, open_workbook_auto, Range, Writer, Xlsx, Row, Cell, open_workbook};
 
 // Enum for DayType
 pub enum DayType {
@@ -32,8 +39,50 @@ impl Task {
     }
 }
 
+
+    pub fn export_to_csv(tasks: Vec<Task>, path: String) -> Result<(), Box<dyn std::error::Error>> {
+    
+        // Create or overwrite the CSV file
+        let file = File::create(&path).expect("Unable to create CSV file");
+        let mut writer = Writer::from_writer(file);
+    
+        // Write the header row
+        writer
+            .write_record(&["Date", "Day Type", "Description", "Time (Minutes)"])
+            .expect("Failed to write CSV header");
+
+
+    
+        // Write the task data
+        for task in tasks {
+            
+            let day_type = match task.day_type {
+                DayType::WorkDay => "WORKDAY",
+                DayType::Feriado => "FERIADO",
+                DayType::Ferias => "FERIAS",
+            };
+
+            writer
+                .write_record(&[
+                    task.date.to_string(),
+                    day_type.to_string(),
+                    task.description,
+                    task.time.to_string(),
+                ])
+                .expect("Failed to write CSV row");
+        }
+    
+        writer.flush().expect("Failed to flush CSV writer");
+    
+        println!("Tasks successfully exported to {:?}", path);
+
+        Ok(())
+    }
+
+
+/* 
 pub fn export_to_excel(tasks: Vec<Task>) {
-    let app_data_dir = app_data_dir().unwrap().join("daily_report");
+    let app_data_dir = app_data_dir(AppDataType::UserData).unwrap().join("daily_report");
 
     // Resolve CSV file path
     std::fs::create_dir_all(app_data_dir.join("data")).expect("Failed to create data directory");
@@ -42,7 +91,7 @@ pub fn export_to_excel(tasks: Vec<Task>) {
     
     // Create or load the workbook
     let mut workbook = if file_exists {
-        let mut workbook = umya_spreadsheet::reader::xlsx::read(&path).expect("Unable to read existing file");
+    let mut workbook = umya_spreadsheet::reader::xlsx::read(&path).expect("Unable to read existing file");
         
         // Ensure the "Tasks" sheet exists, or add it
         if workbook.get_sheet_by_name("Tasks").is_none() {
@@ -127,4 +176,4 @@ pub fn export_to_excel(tasks: Vec<Task>) {
     // Save the workbook
     xlsx::write(&workbook, &path).expect("Unable to save the Excel file");
     println!("Tasks exported to {}", path);
-}
+}  */

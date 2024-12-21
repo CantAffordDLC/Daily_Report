@@ -161,4 +161,11 @@ $('#extractButton').click(function(){
           text: text || null   // Gets the text inside the <p> or null if empty
       });
   });
+
+  try {
+    invoke('receive_tasks', { recievedtasks: taskArray });
+    console.log('Tasks sent to backend successfully');
+  } catch (error) {
+    console.error('Error sending tasks to backend:', error);
+  }
 })
