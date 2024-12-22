@@ -41,9 +41,10 @@ impl Task {
 
 
     pub fn export_to_csv(tasks: Vec<Task>, path: String) -> Result<(), Box<dyn std::error::Error>> {
-    
+        let file_name = "exported_tasks.csv";
+        let file_path = format!("{}\\{}", path, file_name);
         // Create or overwrite the CSV file
-        let file = File::create(&path).expect("Unable to create CSV file");
+        let file = File::create(&file_path).expect("Unable to create CSV file");
         let mut writer = Writer::from_writer(file);
     
         // Write the header row
@@ -74,7 +75,7 @@ impl Task {
     
         writer.flush().expect("Failed to flush CSV writer");
     
-        println!("Tasks successfully exported to {:?}", path);
+        println!("Tasks successfully exported to {:?}", file_path);
 
         Ok(())
     }

@@ -152,7 +152,7 @@ $('#extractButton').click(function(){
         type = 'WORKDAY';
       }
 
-      let dateoftheday = $('#dateDisplay').val();
+      let dateoftheday = $('#dateDisplay').text();
 
       // Add an object with the icon and paragraph content to the array
       taskArray.push({
