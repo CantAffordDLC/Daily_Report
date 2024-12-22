@@ -1,10 +1,11 @@
 use std::path::Path;
-use std::fs::File;
-use std::io::Write;
+use std::fs::{File, OpenOptions};
+use std::io::{Write};
 use chrono::NaiveDate;
 use csv::Writer;
 use tauri::api::path::app_data_dir;
 use directories::{ProjectDirs, BaseDirs};
+use std::fs::metadata;
 
 
 
@@ -44,16 +45,28 @@ impl Task {
         let file_name = "exported_tasks.csv";
         let file_path = format!("{}\\{}", path, file_name);
         // Create or overwrite the CSV file
-        let file = File::create(&file_path).expect("Unable to create CSV file");
-        let mut writer = Writer::from_writer(file);
-    
-        // Write the header row
-        writer
-            .write_record(&["Date", "Day Type", "Description", "Time (Minutes)"])
-            .expect("Failed to write CSV header");
+        // Open the file in append mode if it exists, otherwise create it.
+        let file = OpenOptions::new()
+        .create(true)      // Create the file if it doesn't exist.
+        .append(true)      // Open the file in append mode.
+        .write(true)       // Allow writing to the file.
+        .open(&file_path)
+        .expect("Unable to open CSV file");
+        //let file = File::create(&file_path).expect("Unable to create CSV file");
 
-
+        let file_ref = &file;
+        
+        // Check if the file exists and is not empty
+        if let Ok(metadata) = metadata(&file_path) {
+            if metadata.len() == 0 {
+                let mut writer = Writer::from_writer(file_ref);  // Pass a reference here
+                writer
+                .write_record(&["Date", "Day Type", "Description", "Time (Minutes)"])
+                .expect("Failed to write CSV header");
+        }
+    }
     
+    let mut writer = Writer::from_writer(file_ref);
         // Write the task data
         for task in tasks {
             
