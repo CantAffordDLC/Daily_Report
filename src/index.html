@@ -28,6 +28,7 @@
               </div>
             </div>
             <div class="input-wrapper">
+              <!-- dropdown icon -->
                 <div class="dropdown">
                   <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <i id="iconContainer" class="fas fa-umbrella-beach"> </i>
@@ -36,9 +37,12 @@
                   </div>
                 </div>
                 <!-- Dropdown time-->
-                <div class="dropdown timedropdown">
+                <div class="dropdown timedropdown" id="timeDropdown" style="align-items: left;">
                   <button class="btn btn-secondary dropdown-toggle" type="button" id="timeDropdownButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <span id="selectedTime" class="Time">00H</span>
+                    <div class = "time-container">
+                      <i class="fas fa-clock"></i>
+                      <span id="selectedTime" class="Time" style="display: none;">00H</span>
+                    </div>
                   </button>
                   <div class="dropdown-menu" aria-labelledby="timeDropdownButton" id="timeOptions">
                   </div>
@@ -76,11 +80,20 @@
           .text(hour)
           .click(function (e) {
             e.preventDefault();
+            if ($(this).text() == "00H") {
+              $("#selectedTime").hide();
+              $("#timeDropdown").removeClass('spanactive');
+              $("#timeDropdown").removeClass('timedropdown');
+            }else {
+              $("#selectedTime").show();
+              $("#timeDropdown").addClass('spanactive');
+              $("#timeDropdown").addClass('timedropdown');
+            }
             $('#selectedTime').text(hour); // Atualiza o horário selecionado
           });
         $('#timeOptions').append(option);
       }
-    });
+  });
   </script>
 </body>
 

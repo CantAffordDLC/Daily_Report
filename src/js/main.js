@@ -11,8 +11,20 @@ function addTask() {
   const taskInput = document.getElementById('taskInput');
   const taskList = document.getElementById('task-list');
   const icon = document.getElementById('iconContainer');
+  const time = document.getElementById('selectedTime'); 
+  const clockIcon = document.querySelector('.fa-clock');
   let className = $('#iconContainer').attr('class');
   const taskText = taskInput.value;
+
+  if($(time).text() == "00H"){
+    time.setAttribute("style", "border-color: red;");
+    clockIcon.setAttribute("style", "color: red;");
+    alert("please select a time");
+    return;
+  }else{
+    time.setAttribute("style", "border-color: #000000;");
+    clockIcon.setAttribute("style", "color: #000000;");
+  }
 /*
   icon.classList.add("bounce");
   
@@ -36,9 +48,18 @@ function addTask() {
   itemIcon.id ='icon-item';
   itemIcon.innerHTML = '<i class="'+ className +'"></i>';
 
+  //create time element
+  const taskTime = document.createElement('p');
+  taskTime.classList.add('task-time');
+  taskTime.textContent = $(time).text(); 
+
+  itemIcon.appendChild(taskTime);
+
   // Create a paragraph element for the task text
   const taskDescription = document.createElement('p');
+  taskDescription.classList.add('task-description');
   taskDescription.textContent = taskText;
+
 
   // Icon to remove taskItem
   const statusIcon = document.createElement('span');
@@ -52,10 +73,16 @@ function addTask() {
     taskItem.remove(); // Remove the task item from the DOM
   });
 
+  const leftContainer = document.createElement('div');
+  leftContainer.classList.add('task-left');
+  leftContainer.appendChild(itemIcon);
+  leftContainer.appendChild(taskTime);
+
   // Append elements to taskItem
-  taskItem.appendChild(itemIcon);
+  taskItem.appendChild(leftContainer);
   taskItem.appendChild(taskDescription);
   taskItem.appendChild(statusIcon);
+  taskItem.classList.add('fade-in');
 
   // Add the task to the task list
   taskList.appendChild(taskItem);

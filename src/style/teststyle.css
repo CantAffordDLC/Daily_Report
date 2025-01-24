@@ -118,6 +118,7 @@ input[type="text"]::placeholder {
   display: flex;
   align-items: center;
   justify-content: space-between; /* Space between text and dropdown icon */
+  height: 40px;
 }
 
 .dropdown:hover {
@@ -155,6 +156,16 @@ input[type="text"]::placeholder {
 }
 .dropdown.timedropdown:hover {
   width: 15%; /* Expand width on hover to show the arrow */
+}
+
+
+.dropdown.spanactive{
+  width: 18%; /* Adjust as needed */
+  height: 40px;
+  transition: width 0.3s ease;
+}
+.dropdown.spanactive:hover {
+  width: 20%; /* Expand width on hover to show the arrow */
 }
 
 .dropdown-menu{
@@ -195,6 +206,8 @@ button.submit-btn i{
   margin-bottom: 20px;
 }
 
+/* Task item styling */
+
 .task-item {
     width: 100%; /* Adjust as needed */
     height: 40px; /* Adjust as needed */
@@ -208,12 +221,18 @@ button.submit-btn i{
     justify-content: space-between;
     align-items: center; 
     margin-bottom: 5px;
+    padding: 10px;
+    margin: 5px 0;
+    background-color: #f9f9f9;
 }
+
+
 
 .task-item p {
   margin: 0;
   font-weight: normal;
   color: #333;
+  font-family: "Helvetica", "Arial", sans-serif;
 }
 
 .task-item .status-icon {
@@ -228,6 +247,26 @@ button.submit-btn i{
   opacity: 1;  /* Icon is initially hidden (fully transparent) */
   transition: opacity 0.3s ease-in-out;  /* Add a smooth transition effect */
 }
+
+.task-left {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Space between icon and time */
+}
+
+.task-time {
+  font-size: 14px;
+  color: #555;
+}
+
+.task-description {
+  flex: 1; /* Allows the text to expand and center itself */
+  text-align: center;
+  font-size: 16px;
+  color: #333;
+}
+
+/* extract button styling */
 
 .extract-button{
   position: absolute; /* Make button positionable within the container */
@@ -245,4 +284,28 @@ button.submit-btn i{
   background-color: #4d8350; /* Ensure it has a background color */
   cursor: pointer;
   font-family: "Helvetica", "Arial", sans-serif;
+}
+
+.time-container {
+  display: flex; /* Para usar o flexbox */
+  align-items: left; /* Alinha verticalmente os itens no centro */
+}
+
+#selectedTime {/* Ajusta a margem para a esquerda, se necessário */
+  margin-left: 5px;
+  display: inline-block; /* Certifique-se de que está no fluxo inline */
+}
+
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
