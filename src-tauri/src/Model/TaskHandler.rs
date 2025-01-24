@@ -40,7 +40,7 @@ impl Task {
     }
 }
 
-
+    // Faz export do CSV
     pub fn export_to_csv(tasks: Vec<Task>, path: String) -> Result<(), Box<dyn std::error::Error>> {
         let file_name = "exported_tasks.csv";
         let file_path = format!("{}\\{}", path, file_name);
@@ -66,6 +66,7 @@ impl Task {
         }
     }
     
+
     let mut writer = Writer::from_writer(file_ref);
         // Write the task data
         for task in tasks {

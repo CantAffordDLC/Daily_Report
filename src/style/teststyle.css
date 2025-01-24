@@ -25,6 +25,13 @@ body {
     font-family: "Helvetica", "Arial", sans-serif;
     font-weight: bold;
   }
+
+  span.Time{
+    font-family: "Helvetica", "Arial", sans-serif;
+    font-weight: bold;
+    color: #000000;
+    font-size: 13px;
+  }
   
   .date {
     font-family: "Helvetica", "Arial", sans-serif;
@@ -68,7 +75,7 @@ body {
   }
 
 input[type="text"] {
-    width: 80%; /* Adjust as needed */
+    width: 70%; /* Adjust as needed */
     height: 40px;
     padding: 10px 40px 10px 15px;
     border-radius: 30px;
@@ -139,6 +146,15 @@ input[type="text"]::placeholder {
 
 .dropdown:hover .dropdown-toggle::after {
   opacity: 1; /* Show arrow on hover */
+}
+
+.dropdown.timedropdown{
+  width: 12%; /* Adjust as needed */
+  height: 40px;
+  transition: width 0.3s ease;
+}
+.dropdown.timedropdown:hover {
+  width: 15%; /* Expand width on hover to show the arrow */
 }
 
 .dropdown-menu{

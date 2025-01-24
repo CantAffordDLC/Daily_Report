@@ -35,6 +35,14 @@
                   <div class="dropdown-menu" aria-labelledby="dropdownMenuButton" id="dropdownOptions">
                   </div>
                 </div>
+                <!-- Dropdown time-->
+                <div class="dropdown timedropdown">
+                  <button class="btn btn-secondary dropdown-toggle" type="button" id="timeDropdownButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <span id="selectedTime" class="Time">00H</span>
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="timeDropdownButton" id="timeOptions">
+                  </div>
+                </div>
               <input type="text" id="taskInput" placeholder="Enter a new task...">
               <button onclick="addTask()" class="submit-btn"><i class="fa fa-arrow-circle-right"></i></button>
             </div>
@@ -57,6 +65,23 @@
   <script src="js/custom.js"></script>
   <script src="js/Task.js"></script>
   <script src="js/main.js"></script>
+  <script>
+    $(document).ready(function () {
+      // Gerar as opções de horários
+      for (let i = 0; i < 12; i++) {
+        const hour = i.toString().padStart(2, '0') + 'H';
+        const option = $('<a></a>')
+          .addClass('dropdown-item')
+          .attr('href', '#')
+          .text(hour)
+          .click(function (e) {
+            e.preventDefault();
+            $('#selectedTime').text(hour); // Atualiza o horário selecionado
+          });
+        $('#timeOptions').append(option);
+      }
+    });
+  </script>
 </body>
 
 </html>

@@ -70,7 +70,7 @@ $(document).ready(function () {
   });
 
   const dropdown = document.getElementById("DayTypeDropdown");
-  const dropdownList = $('.dropdown-menu');
+  const dropdownList = $('#dropdownOptions');
 
   for (const type in DayType) {
 
