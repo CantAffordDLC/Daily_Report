@@ -45,7 +45,7 @@ function addTask() {
 
 
   const itemIcon = document.createElement('span');
-  itemIcon.id ='icon-item';
+  itemIcon.className ='icon-item';
   itemIcon.innerHTML = '<i class="'+ className +'"></i>';
 
   //create time element
@@ -167,9 +167,11 @@ $('#extractButton').click(function(){
   $('.task-item').each(function() {
       // Find the <i> inside the <span> within the task-item
       const icon = $(this).find('span i').attr('class');
+      
+      const time = parseInt($(this).find('.task-time').text().replace('H', ''));
 
       // Find the <p> outside the <span> within the task-item
-      const text = $(this).find('p').text();
+      const text = $(this).find('.task-description').text();
 
       if (icon === 'fas fa-umbrella-beach') {
         type = 'FERIAS';
@@ -185,7 +187,8 @@ $('#extractButton').click(function(){
       taskArray.push({
           date: dateoftheday || null,
           icon: type || null,  // Gets the HTML inside the <i> or null if empty
-          text: text || null   // Gets the text inside the <p> or null if empty
+          text: text || null,   // Gets the text inside the <p> or null if empty
+          time: time || null   // Gets the text inside the <p> or null if empty
       });
   });
 

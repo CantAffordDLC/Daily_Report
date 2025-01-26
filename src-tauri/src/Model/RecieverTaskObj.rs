@@ -11,6 +11,7 @@ pub struct RecieverItemObj {
     date: String,
     icon: String,
     text: String,
+    time: f64
 }
 
 #[derive(Serialize, Deserialize)]
@@ -44,7 +45,7 @@ fn update_settings(new_path: String) -> Result<()> {
 #[tauri::command]
 pub fn receive_tasks(recievedtasks: Vec<RecieverItemObj>) {
     let path = load_settings();
-    let time = 7.5 / recievedtasks.len() as f64; // Compute time
+    //let time = 7.5 / recievedtasks.len() as f64; // Compute time
     let mut date = NaiveDate::from_ymd(1990, 01, 01);
     let mut tasks: Vec<TaskHandler::Task> = Vec::new();
     
@@ -55,7 +56,7 @@ pub fn receive_tasks(recievedtasks: Vec<RecieverItemObj>) {
         .map(|part| part.parse::<u32>().expect("Invalid date component"))
         .collect();
     
-        println!("chegou aqui Data: {:#?}", parts);
+        //println!("chegou aqui Data: {:#?}", parts);
         if parts.len() == 3 {
             date = NaiveDate::from_ymd(parts[0] as i32, parts[1], parts[2]);
         }
@@ -75,6 +76,8 @@ pub fn receive_tasks(recievedtasks: Vec<RecieverItemObj>) {
                 continue; // Skip unknown task types
             }
         };
+
+        let time = recievedtask.time;
 
         tasks.push(TaskHandler::Task::new(
             daytype,

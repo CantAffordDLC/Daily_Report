@@ -33,13 +33,6 @@ body {
     font-size: 13px;
   }
   
-  .date {
-    font-family: "Helvetica", "Arial", sans-serif;
-    font-size: 18px;
-    color: #777;
-    margin-top: -10px;
-  }
-  
   .message {
     text-align: center;
     font-size: 16px;
@@ -308,4 +301,38 @@ button.submit-btn i{
   to {
     opacity: 1;
   }
+}
+
+/* Date Container styling */
+
+.date-container {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espaçamento entre os elementos */
+  margin-top: -10px;
+}
+
+.date {
+  font-family: "Helvetica", "Arial", sans-serif;
+  font-size: 18px;
+  width: 100px;
+  color: #777;
+  
+}
+
+input.date {
+  display: none; /* Inicialmente oculto */
+  font-family: "Helvetica", "Arial", sans-serif; /* Igual ao <p> */
+  font-size: 18px; /* Igual ao <p> */
+  width: 100px; /* Igual ao <p> */
+  color: #777; /* Igual ao <p> */
+  border: 1px solid #ccc; /* Adiciona uma borda leve */
+  border-radius: 4px; /* Cantos arredondados */
+  padding: 5px; /* Espaço interno para uma aparência mais limpa */
+  box-sizing: border-box; /* Garante que largura inclua bordas e padding */
+}
+
+#datepicker-icon {
+  cursor: pointer;
+  margin-top: -20px;
 }
