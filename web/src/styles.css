@@ -1,0 +1,21 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  color: #1e293b;
+}
+
+code {
+  font-size: 0.85em;
+  background: #f1f5f9;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}

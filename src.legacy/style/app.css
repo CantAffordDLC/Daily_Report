@@ -1,0 +1,47 @@
+.app-nav {
+  padding: 0.5rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+.app-nav .btn-nav {
+  margin-left: 0.35rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #1a2e35;
+  font-weight: 500;
+}
+
+.app-nav .btn-nav:hover {
+  background: rgba(28, 187, 180, 0.15);
+}
+
+.app-nav .btn-nav.active {
+  border-color: #1cbbb4;
+  background: rgba(28, 187, 180, 0.25);
+}
+
+.app-page {
+  display: none;
+}
+
+.app-page.active {
+  display: block;
+}
+
+.obsidian-btn {
+  padding: 0 0.5rem !important;
+  align-self: center;
+}
+
+#page-daily .input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+#page-daily .input-wrapper .form-control {
+  max-width: none;
+}

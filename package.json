@@ -4,9 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "web:dev": "npm --prefix web run start",
+    "web:build": "npm --prefix web run build",
+    "tauri:dev": "tauri dev",
+    "dev": "tauri dev"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1"
+    "@tauri-apps/cli": "^1.6.3"
   }
 }

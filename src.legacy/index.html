@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Daily Report</title>
+  <link rel="stylesheet" href="style/style.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/css/bootstrap.min.css"
+    integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <link rel="stylesheet" href="style/bootstrap-datepicker.min.css">
+  <link rel="stylesheet" href="style/responsive.css">
+  <link rel="stylesheet" href="style/teststyle.css">
+  <link rel="stylesheet" href="style/app.css">
+</head>
+
+<body>
+  <nav class="app-nav navbar navbar-expand navbar-light bg-light border-bottom">
+    <span class="navbar-brand mb-0 h1">Daily Report</span>
+    <div class="navbar-nav ml-auto">
+      <button type="button" class="btn btn-nav active" data-page="daily">Daily log</button>
+      <button type="button" class="btn btn-nav" data-page="manage">Projects & tasks</button>
+      <button type="button" class="btn btn-nav" data-page="logs">Hour logs</button>
+    </div>
+  </nav>
+
+  <section class="experience_section layout_padding pt-4">
+    <div class="container">
+
+      <div id="page-daily" class="app-page active">
+        <div class="headerContainer mb-3">
+          <h2 class="title">Daily log</h2>
+          <div class="form-row align-items-end">
+            <div class="col-md-4 mb-2">
+              <label for="dailyProjectSelect">Project</label>
+              <select id="dailyProjectSelect" class="form-control"></select>
+            </div>
+            <div class="col-md-4 mb-2">
+              <label>Date</label>
+              <div class="date-container">
+                <p class="date mb-0" id="dateDisplay">—</p>
+                <input type="text" id="datepicker" class="date form-control" style="display: none;">
+                <i class="fas fa-calendar-alt ml-2" id="datepicker-icon" role="button" aria-label="Pick date"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tableContainer">
+          <div id="task-list" class="task-list"></div>
+        </div>
+        <div class="input-wrapper flex-wrap">
+          <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton"
+              data-toggle="dropdown"><i id="iconContainer" class="fas fa-briefcase"></i> Type</button>
+            <div class="dropdown-menu" id="dropdownOptions"></div>
+          </div>
+          <div class="dropdown timedropdown" id="timeDropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" id="timeDropdownButton"
+              data-toggle="dropdown">
+              <i class="fas fa-clock"></i>
+              <span id="selectedTime" class="Time" style="display: none;">00H</span>
+            </button>
+            <div class="dropdown-menu" id="timeOptions"></div>
+          </div>
+          <input type="text" id="taskInput" class="form-control flex-grow-1" placeholder="Task description…">
+          <input type="text" id="obsidianInput" class="form-control" style="min-width: 200px;"
+            placeholder="Obsidian URL or note path (optional)">
+          <button type="button" id="btnAddTask" class="submit-btn btn btn-primary"><i
+              class="fa fa-arrow-circle-right"></i></button>
+        </div>
+      </div>
+
+      <div id="page-manage" class="app-page">
+        <h2 class="title mb-3">Projects & tasks</h2>
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Settings</h5>
+            <div class="form-group">
+              <label for="settingsExportPath">Export folder</label>
+              <input type="text" id="settingsExportPath" class="form-control"
+                placeholder="Folder where Excel files are saved">
+            </div>
+            <div class="form-group">
+              <label for="settingsVault">Default Obsidian vault name</label>
+              <input type="text" id="settingsVault" class="form-control"
+                placeholder="If set, note paths build obsidian:// links">
+            </div>
+            <button type="button" id="btnSaveSettings" class="btn btn-secondary">Save settings</button>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Projects</h5>
+            <div class="form-row">
+              <div class="col-md-6 mb-2">
+                <input type="text" id="newProjectName" class="form-control" placeholder="New project name">
+              </div>
+              <div class="col-md-6 mb-2">
+                <button type="button" id="btnCreateProject" class="btn btn-primary">Create project</button>
+                <button type="button" id="btnDeleteProject" class="btn btn-outline-danger ml-2">Delete selected
+                  project</button>
+              </div>
+            </div>
+            <div class="form-group mt-2">
+              <label for="manageProjectSelect">Active project</label>
+              <select id="manageProjectSelect" class="form-control"></select>
+            </div>
+          </div>
+        </div>
+
+        <div id="manageEditPanel" class="card mb-3" style="display: none;">
+          <div class="card-body">
+            <h5 class="card-title">Edit task</h5>
+            <div class="form-row">
+              <div class="col-md-3 mb-2">
+                <label>Date</label>
+                <input type="text" id="editTaskDate" class="form-control" placeholder="YYYY-MM-DD">
+              </div>
+              <div class="col-md-2 mb-2">
+                <label>Type</label>
+                <select id="editTaskDayType" class="form-control">
+                  <option>WORKDAY</option>
+                  <option>FERIAS</option>
+                  <option>FERIADO</option>
+                </select>
+              </div>
+              <div class="col-md-2 mb-2">
+                <label>Hours</label>
+                <input type="number" step="0.25" id="editTaskHours" class="form-control">
+              </div>
+              <div class="col-md-5 mb-2">
+                <label>Obsidian</label>
+                <input type="text" id="editTaskObsidian" class="form-control">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <input type="text" id="editTaskDesc" class="form-control">
+            </div>
+            <button type="button" id="btnSaveEditTask" class="btn btn-primary">Save task</button>
+            <button type="button" id="btnCancelEditTask" class="btn btn-link">Cancel</button>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Tasks in project</h5>
+            <div class="table-responsive">
+              <table class="table table-sm table-striped">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Hours</th>
+                    <th>Obsidian</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="manageTasksBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Export to Excel</h5>
+            <div class="form-group">
+              <label for="exportProjectSelect">Project</label>
+              <select id="exportProjectSelect" class="form-control"></select>
+            </div>
+            <p class="mb-2">Months to include:</p>
+            <div id="exportMonthChecks" class="border rounded p-2 mb-2" style="max-height: 220px; overflow-y: auto;">
+            </div>
+            <button type="button" id="btnExportXlsx" class="btn btn-success">Export .xlsx</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="page-logs" class="app-page">
+        <h2 class="title mb-3">Hour logs</h2>
+        <div class="form-inline mb-3">
+          <label class="mr-2" for="logsYearSelect">Year</label>
+          <select id="logsYearSelect" class="form-control mr-2">
+            <option value="">All years</option>
+          </select>
+          <button type="button" id="btnRefreshLogs" class="btn btn-primary">Refresh</button>
+        </div>
+        <h5>By project</h5>
+        <div class="table-responsive mb-4">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Project</th>
+                <th>Hours</th>
+              </tr>
+            </thead>
+            <tbody id="logsTableBody"></tbody>
+          </table>
+        </div>
+        <h5>Monthly totals</h5>
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Scope</th>
+                <th>Hours</th>
+              </tr>
+            </thead>
+            <tbody id="logsSummary"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+    integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+    integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js"
+    integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+    crossorigin="anonymous"></script>
+  <script src="js/custom.js"></script>
+  <script src="js/bootstrap-datepicker.min.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>

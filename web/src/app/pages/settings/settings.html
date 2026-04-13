@@ -1,0 +1,23 @@
+<div class="page">
+  <h1>Settings</h1>
+
+  <section class="card">
+    <label class="block">
+      Export folder
+      <input type="text" class="input wide" [(ngModel)]="exportPath" placeholder="Folder for Excel exports" />
+    </label>
+    <label class="block">
+      Default Obsidian vault name
+      <input
+        type="text"
+        class="input wide"
+        [(ngModel)]="defaultObsidianVault"
+        placeholder="Used when you enter a vault-relative note path (not full URI)"
+      />
+    </label>
+    <button type="button" class="btn primary" (click)="save()">Save</button>
+    @if (message) {
+      <p class="ok">{{ message }}</p>
+    }
+  </section>
+</div>

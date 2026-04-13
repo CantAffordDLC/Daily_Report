@@ -1,0 +1,54 @@
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+.card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  background: #fff;
+}
+
+.block {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.input {
+  display: block;
+  margin-top: 0.35rem;
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  font-weight: 400;
+}
+
+.input.wide {
+  max-width: none;
+}
+
+.btn.primary {
+  background: #0f766e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ok {
+  color: #0f766e;
+  margin-top: 0.75rem;
+}

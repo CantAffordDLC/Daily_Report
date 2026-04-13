@@ -1,0 +1,111 @@
+<div class="page">
+  <header class="page-header">
+    <h1>Projects</h1>
+    <p class="muted">Open a project to view and add tasks. Link tasks to notes on your machine.</p>
+  </header>
+
+  @if (error) {
+    <p class="error">{{ error }}</p>
+  }
+
+  <div class="toolbar">
+    <input
+      type="text"
+      class="input"
+      placeholder="New project name"
+      [(ngModel)]="newProjectName"
+      (keyup.enter)="createProject()"
+    />
+    <button type="button" class="btn primary" (click)="createProject()" [disabled]="loading">
+      Create project
+    </button>
+  </div>
+
+  @if (loading && !projects.length) {
+    <p class="muted">Loading…</p>
+  }
+
+  <ul class="project-grid">
+    @for (p of projects; track p.id) {
+      <li class="project-card" (click)="openProject(p)" role="button" tabindex="0" (keyup.enter)="openProject(p)">
+        <div class="project-card-body">
+          <h2>{{ p.name }}</h2>
+          <span class="muted small">ID {{ p.id }}</span>
+        </div>
+        <button
+          type="button"
+          class="btn danger ghost card-delete"
+          (click)="deleteProject(p, $event)"
+          title="Delete project"
+        >
+          Delete
+        </button>
+      </li>
+    }
+  </ul>
+
+  @if (!loading && !projects.length) {
+    <p class="muted">No projects yet. Create one above.</p>
+  }
+</div>
+
+@if (modalOpen && activeProject) {
+  <div class="modal-backdrop" (click)="closeModal()"></div>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-header">
+      <h2 id="modal-title">{{ activeProject.name }}</h2>
+      <button type="button" class="btn ghost" (click)="closeModal()">Close</button>
+    </div>
+
+    <div class="modal-body">
+      <section>
+        <div class="section-head">
+          <h3>Tasks</h3>
+          <button type="button" class="btn primary" (click)="openAddTaskPopup()">Add task</button>
+        </div>
+        @if (tasksLoading) {
+          <p class="muted">Loading tasks…</p>
+        } @else if (!tasks.length) {
+          <p class="muted">No tasks yet. Use Add task to create one.</p>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Hours</th>
+                  <th>Name</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (t of tasks; track t.id) {
+                  <tr>
+                    <td>{{ t.taskDate }}</td>
+                    <td>{{ t.timeHours }}</td>
+                    <td>{{ t.description }}</td>
+                    <td class="actions">
+                      @if (t.obsidianUri) {
+                        <button type="button" class="btn link" (click)="openObsidian(t.obsidianUri)">Open</button>
+                      }
+                      <button type="button" class="btn ghost" (click)="openEditTaskPopup(t)">Edit</button>
+                      <button type="button" class="btn danger ghost" (click)="deleteTask(t)">Delete</button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </section>
+    </div>
+  </div>
+
+  <app-task-dialog
+    [open]="taskFormOpen"
+    [projectId]="activeProject.id"
+    [editTask]="editingTaskForDialog"
+    (closed)="onTaskDialogClosed()"
+    (saved)="loadTasks()"
+  />
+}

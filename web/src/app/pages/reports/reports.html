@@ -1,0 +1,101 @@
+<div class="page">
+  <h1>Reports</h1>
+
+  <section class="card">
+    <h2>Export to Excel</h2>
+    <p class="muted">Choose a project and one or more months. Files are saved to your export folder in Settings.</p>
+    @if (projects.length) {
+      <label class="block">
+        Project
+        <select class="input" [(ngModel)]="exportProjectId">
+          @for (p of projects; track p.id) {
+            <option [ngValue]="p.id">{{ p.name }}</option>
+          }
+        </select>
+      </label>
+    } @else {
+      <p class="muted">Create a project first.</p>
+    }
+    <p class="label">Months</p>
+    <div class="month-grid">
+      @for (m of monthOptions; track m.value) {
+        <label class="check">
+          <input
+            type="checkbox"
+            [checked]="isMonthSelected(m.value)"
+            (change)="toggleMonth(m.value)"
+          />
+          {{ m.label }}
+        </label>
+      }
+    </div>
+    <button type="button" class="btn primary" (click)="runExport()">Export .xlsx</button>
+    @if (exportMessage) {
+      <pre class="export-msg">{{ exportMessage }}</pre>
+    }
+  </section>
+
+  <section class="card">
+    <h2>Hour logs</h2>
+    <div class="row">
+      <label>
+        Year
+        <select class="input" [(ngModel)]="logsYear">
+          <option [ngValue]="''">All years</option>
+          @for (y of yearChoices; track y) {
+            <option [ngValue]="y">{{ y }}</option>
+          }
+        </select>
+      </label>
+      <button type="button" class="btn secondary" (click)="refreshLogs()">Refresh</button>
+    </div>
+    <h3>By project</h3>
+    @if (logsLoading) {
+      <p class="muted">Loading…</p>
+    } @else if (!logRows.length) {
+      <p class="muted">No data.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Project</th>
+              <th>Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of logRows; track r.yearMonth + '-' + r.projectId) {
+              <tr>
+                <td>{{ r.yearMonth }}</td>
+                <td>{{ r.projectName }}</td>
+                <td>{{ r.totalHours | number: '1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    <h3>Monthly totals</h3>
+    @if (monthTotals.length) {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of monthTotals; track t.month) {
+              <tr>
+                <td>{{ t.month }}</td>
+                <td>{{ t.hours | number: '1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</div>

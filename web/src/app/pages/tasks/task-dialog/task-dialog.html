@@ -1,0 +1,57 @@
+@if (open) {
+  <div class="task-dialog-backdrop" (click)="backdropClick($event)" role="presentation"></div>
+  <div class="task-dialog" role="dialog" aria-modal="true" [attr.aria-labelledby]="'task-dialog-title'">
+    <div class="task-dialog-header">
+      <h2 id="task-dialog-title">{{ editTask ? 'Edit task' : 'New task' }}</h2>
+      <button type="button" class="btn ghost" (click)="dismiss()" [disabled]="saving">Cancel</button>
+    </div>
+
+    <div class="task-dialog-body">
+      <label class="field">
+        <span class="label">Name</span>
+        <input
+          type="text"
+          class="input"
+          [(ngModel)]="taskName"
+          placeholder="What is this task?"
+          (keyup.enter)="submit()"
+        />
+      </label>
+
+      <div class="row">
+        <label class="field">
+          <span class="label">Date</span>
+          <input type="date" class="input" [(ngModel)]="taskDate" />
+        </label>
+        <label class="field narrow">
+          <span class="label">Hours</span>
+          <input type="number" class="input" step="0.25" min="0" [(ngModel)]="timeHours" />
+        </label>
+      </div>
+
+      <label class="field">
+        <span class="label">Obsidian note (optional)</span>
+        <input
+          type="text"
+          class="input mono"
+          [(ngModel)]="obsidianDraft"
+          placeholder="Choose a .md file or paste obsidian:// URL / path"
+        />
+      </label>
+      <div class="obsidian-actions">
+        <button type="button" class="btn secondary" (click)="pickNote()" [disabled]="saving">
+          Choose .md file…
+        </button>
+        @if (obsidianDraft.trim()) {
+          <button type="button" class="btn ghost" (click)="clearNote()" [disabled]="saving">Clear</button>
+        }
+      </div>
+    </div>
+
+    <div class="task-dialog-footer">
+      <button type="button" class="btn primary" (click)="submit()" [disabled]="saving">
+        {{ saving ? 'Saving…' : editTask ? 'Save' : 'Add task' }}
+      </button>
+    </div>
+  </div>
+}
