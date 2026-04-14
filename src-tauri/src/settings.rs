@@ -8,6 +8,15 @@ use std::path::Path;
 pub struct AppSettings {
     pub export_path: String,
     pub default_obsidian_vault: String,
+    #[serde(default)]
+    pub reminder_enabled: bool,
+    /// Six-field cron (second minute hour day month weekday), local time.
+    #[serde(default = "default_reminder_cron")]
+    pub reminder_cron: String,
+}
+
+fn default_reminder_cron() -> String {
+    "0 0 9,12,17 * * *".to_string()
 }
 
 impl Default for AppSettings {
@@ -19,6 +28,8 @@ impl Default for AppSettings {
         Self {
             export_path,
             default_obsidian_vault: String::new(),
+            reminder_enabled: false,
+            reminder_cron: default_reminder_cron(),
         }
     }
 }
@@ -29,6 +40,9 @@ pub fn load(app_subdir: &Path) -> AppSettings {
         if let Ok(mut v) = serde_json::from_str::<AppSettings>(&s) {
             if v.export_path.trim().is_empty() {
                 v.export_path = AppSettings::default().export_path;
+            }
+            if v.reminder_cron.trim().is_empty() {
+                v.reminder_cron = default_reminder_cron();
             }
             return v;
         }

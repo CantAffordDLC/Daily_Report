@@ -52,3 +52,45 @@ h1 {
   color: #0f766e;
   margin-top: 0.75rem;
 }
+
+.reminder-block {
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 1rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.check input {
+  width: auto;
+}
+
+.block.tight {
+  margin-bottom: 0.5rem;
+}
+
+.hint {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #64748b;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.hint code {
+  font-size: 0.75rem;
+  background: #f1f5f9;
+  padding: 0.1rem 0.25rem;
+  border-radius: 4px;
+}
+
+.input.mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.85rem;
+}

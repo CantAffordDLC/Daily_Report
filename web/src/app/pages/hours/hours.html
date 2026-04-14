@@ -1,0 +1,108 @@
+<div class="page">
+  <header class="page-header">
+    <h1>Add hours</h1>
+    <p class="muted">
+      Tasks grouped by project. Fill in hours on any rows, then use <strong>Apply all hours</strong> at the
+      bottom to save everything at once.
+    </p>
+  </header>
+
+  @if (error) {
+    <p class="error">{{ error }}</p>
+  }
+
+  <div class="toolbar toolbar-wrap">
+    <input
+      type="search"
+      class="input search-grow"
+      placeholder="Search by task name, date, project..."
+      [(ngModel)]="searchQuery"
+    />
+    <button type="button" class="btn secondary" (click)="expandAll()">Expand all</button>
+    <button type="button" class="btn secondary" (click)="collapseAll()">Collapse all</button>
+    <button type="button" class="btn ghost" (click)="refresh()" [disabled]="loading">Refresh</button>
+  </div>
+
+  @if (loading && !groups.length) {
+    <p class="muted">Loading...</p>
+  }
+
+  @if (!loading && !groups.length && !error) {
+    <p class="muted">No projects yet. Create projects under Projects.</p>
+  }
+
+  @for (g of visibleGroups(); track g.project.id) {
+    <section class="project-block">
+      <button
+        type="button"
+        class="project-head"
+        (click)="toggleProject(g.project.id)"
+        [attr.aria-expanded]="!isCollapsed(g.project.id)"
+      >
+        <span class="chevron" aria-hidden="true">{{ projectChevron(g.project.id) }}</span>
+        <h2 class="project-title">{{ g.project.name }}</h2>
+        <span class="hours-pill">{{ projectTotalHours(g.tasks) | number: '1.0-2' }} h</span>
+        <span class="muted small task-count">{{ g.tasks.length }} task(s)</span>
+      </button>
+
+      @if (!isCollapsed(g.project.id)) {
+        @if (!g.tasks.length) {
+          <p class="muted empty-hint">No tasks in this project yet.</p>
+        } @else {
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Hours</th>
+                  <th>Task</th>
+                  <th>Hours to add</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (t of g.tasks; track t.id) {
+                  <tr>
+                    <td>{{ t.taskDate }}</td>
+                    <td class="num">{{ t.timeHours | number: '1.0-2' }}</td>
+                    <td>{{ t.description }}</td>
+                    <td class="add-cell">
+                      <input
+                        type="number"
+                        class="input input-hours"
+                        step="0.25"
+                        min="0.01"
+                        placeholder="—"
+                        [(ngModel)]="hourDraft[t.id]"
+                        [disabled]="savingAll"
+                      />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      }
+    </section>
+  }
+
+  @if (normalizedSearch() && !visibleGroups().length && groups.length) {
+    <p class="muted">No tasks match your search.</p>
+  }
+
+  @if (groups.length && !error) {
+    <footer class="apply-bar">
+      <button
+        type="button"
+        class="btn primary apply-btn"
+        (click)="applyAllPendingHours()"
+        [disabled]="loading || savingAll"
+      >
+        {{ savingAll ? 'Applying...' : 'Apply all hours' }}
+      </button>
+      <span class="muted small apply-hint">
+        Saves every row that has a number in "Hours to add"; others are left unchanged.
+      </span>
+    </footer>
+  }
+</div>

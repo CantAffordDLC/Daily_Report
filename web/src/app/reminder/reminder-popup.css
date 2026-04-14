@@ -1,0 +1,154 @@
+.reminder-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgb(15 23 42 / 0.5);
+}
+
+.reminder-dialog {
+  position: fixed;
+  z-index: 1201;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 440px);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+}
+
+.reminder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.reminder-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.reminder-body {
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.reminder-footer {
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.field .label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.field.narrow {
+  max-width: 7rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: flex-end;
+}
+
+.row .field {
+  flex: 1;
+  min-width: 6rem;
+  margin-bottom: 0.85rem;
+}
+
+.combo {
+  position: relative;
+}
+
+.combo-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  max-height: 200px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.12);
+  z-index: 2;
+}
+
+.combo-list li {
+  padding: 0.45rem 0.65rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.combo-list li:hover,
+.combo-list li:focus {
+  background: #f1f5f9;
+  outline: none;
+}
+
+.combo-list .create-row {
+  color: #0f766e;
+  font-weight: 600;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 0.15rem;
+  padding-top: 0.5rem;
+}
+
+.input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  width: 100%;
+}
+
+.input:disabled {
+  background: #f8fafc;
+  color: #94a3b8;
+}
+
+.btn {
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  background: #0f766e;
+  color: #fff;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: #475569;
+}

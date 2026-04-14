@@ -15,6 +15,31 @@
         placeholder="Used when you enter a vault-relative note path (not full URI)"
       />
     </label>
+
+    <div class="block reminder-block">
+      <label class="check">
+        <input type="checkbox" [(ngModel)]="reminderEnabled" />
+        Time log reminder (popup on a schedule)
+      </label>
+      <label class="block tight">
+        Cron schedule (local time, six fields: second minute hour day month weekday)
+        <input
+          type="text"
+          class="input wide mono"
+          [(ngModel)]="reminderCron"
+          placeholder="0 0 9,12,17 * * *"
+          spellcheck="false"
+        />
+      </label>
+      <p class="hint">
+        Examples:
+        <code>0 0 9 * * *</code> daily at 09:00;
+        <code>0 0 */2 * * *</code> every two hours on the hour;
+        <code>0 0 17 * * 1-5</code> weekdays at 17:00.
+        The app must stay open for the reminder to run.
+      </p>
+    </div>
+
     <button type="button" class="btn primary" (click)="save()">Save</button>
     @if (message) {
       <p class="ok">{{ message }}</p>

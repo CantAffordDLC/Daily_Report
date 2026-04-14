@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TauriService, AppSettings } from '../../core/tauri.service';
@@ -12,13 +12,16 @@ import { TauriService, AppSettings } from '../../core/tauri.service';
 })
 export class SettingsPage implements OnInit {
   private readonly tauri = inject(TauriService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   exportPath = '';
   defaultObsidianVault = '';
+  reminderEnabled = false;
+  reminderCron = '0 0 9,12,17 * * *';
   message: string | null = null;
 
-  async ngOnInit(): Promise<void> {
-    await this.load();
+  ngOnInit(): void {
+    void this.load();
   }
 
   async load(): Promise<void> {
@@ -26,8 +29,12 @@ export class SettingsPage implements OnInit {
       const s = await this.tauri.getSettings();
       this.exportPath = s.exportPath;
       this.defaultObsidianVault = s.defaultObsidianVault ?? '';
+      this.reminderEnabled = s.reminderEnabled ?? false;
+      this.reminderCron = s.reminderCron?.trim() || '0 0 9,12,17 * * *';
     } catch (e) {
       console.error(e);
+    } finally {
+      this.cdr.detectChanges();
     }
   }
 
@@ -42,11 +49,15 @@ export class SettingsPage implements OnInit {
       const settings: AppSettings = {
         exportPath,
         defaultObsidianVault: this.defaultObsidianVault.trim(),
+        reminderEnabled: this.reminderEnabled,
+        reminderCron: this.reminderCron.trim() || '0 0 9,12,17 * * *',
       };
       await this.tauri.setSettings(settings);
       this.message = 'Settings saved.';
     } catch (e) {
       alert(String(e));
+    } finally {
+      this.cdr.detectChanges();
     }
   }
 }

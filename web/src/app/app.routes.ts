@@ -8,6 +8,16 @@ export const routes: Routes = [
       import('./pages/projects/projects').then((m) => m.ProjectsPage),
   },
   {
+    path: 'hours',
+    loadComponent: () =>
+      import('./pages/hours/hours').then((m) => m.HoursPage),
+  },
+  {
+    path: 'hour-logs',
+    loadComponent: () =>
+      import('./pages/hour-logs/hour-logs').then((m) => m.HourLogsPage),
+  },
+  {
     path: 'reports',
     loadComponent: () =>
       import('./pages/reports/reports').then((m) => m.ReportsPage),

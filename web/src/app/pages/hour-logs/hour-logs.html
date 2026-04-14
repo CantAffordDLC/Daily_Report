@@ -1,0 +1,71 @@
+<div class="page">
+  <header class="page-header">
+    <h1>Hour logs</h1>
+    <p class="muted">Monthly hours summed by project and overall totals by month.</p>
+  </header>
+
+  <section class="card">
+    <div class="row">
+      <label>
+        Year
+        <select class="input" [(ngModel)]="logsYear" (ngModelChange)="refreshLogs()">
+          <option [ngValue]="''">All years</option>
+          @for (y of yearChoices; track y) {
+            <option [ngValue]="y">{{ y }}</option>
+          }
+        </select>
+      </label>
+      <button type="button" class="btn secondary" (click)="refreshLogs()">Refresh</button>
+    </div>
+    <h2>By project</h2>
+    @if (logsLoading) {
+      <p class="muted">Loading...</p>
+    } @else if (!logRows.length) {
+      <p class="muted">No data.</p>
+    } @else {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Project</th>
+              <th>Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of logRows; track r.yearMonth + '-' + r.projectId) {
+              <tr>
+                <td>{{ r.yearMonth }}</td>
+                <td>{{ r.projectName }}</td>
+                <td>{{ r.totalHours | number: '1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    <h2>Monthly totals</h2>
+    @if (monthTotals.length) {
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Hours</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of monthTotals; track t.month) {
+              <tr>
+                <td>{{ t.month }}</td>
+                <td>{{ t.hours | number: '1.2-2' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    } @else if (!logsLoading) {
+      <p class="muted">No totals yet.</p>
+    }
+  </section>
+</div>

@@ -5,11 +5,13 @@ mod db;
 mod settings;
 
 use chrono::Local;
+use cron::Schedule;
 use db::{MonthlyHourRow, ProjectRow, TaskRow};
 use rust_xlsxwriter::{Format, Workbook};
 use settings::AppSettings;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use std::sync::Mutex;
 use tauri::api::dialog::blocking::FileDialogBuilder;
 use tauri::{Manager, State};
@@ -41,6 +43,13 @@ fn get_settings(state: State<AppState>) -> Result<AppSettings, String> {
 fn set_settings(state: State<AppState>, settings: AppSettings) -> Result<(), String> {
     if settings.export_path.trim().is_empty() {
         return Err("exportPath cannot be empty".into());
+    }
+    if settings.reminder_enabled {
+        let expr = settings.reminder_cron.trim();
+        if expr.is_empty() {
+            return Err("reminderCron is required when reminders are enabled".into());
+        }
+        Schedule::from_str(expr).map_err(|e| format!("Invalid reminderCron: {}", e))?;
     }
     settings::save(&state.data_dir, &settings)
 }
@@ -79,7 +88,12 @@ fn list_tasks_by_date(
 #[tauri::command]
 fn list_tasks_by_project(state: State<AppState>, project_id: i64) -> Result<Vec<TaskRow>, String> {
     let conn = state.db.lock().map_err(|e| e.to_string())?;
-    db::list_tasks_for_project(&conn, project_id).map_err(|e| e.to_string())
+    let tasks = db::list_tasks_for_project(&conn, project_id).map_err(|e| e.to_string())?;
+
+    // This prints the list to your terminal/console
+    println!("Found tasks for project {}: {:#?}", project_id, tasks);
+
+    Ok(tasks)
 }
 
 #[tauri::command]
@@ -175,11 +189,16 @@ fn export_project_tasks_xlsx(
     let export_dir = PathBuf::from(&settings.export_path);
     fs::create_dir_all(&export_dir).map_err(|e| e.to_string())?;
 
-    let conn = state.db.lock().map_err(|e| e.to_string())?;
-    let pname = db::project_name(&conn, project_id)
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "Project not found".to_string())?;
-    let tasks = db::tasks_for_export(&conn, project_id, &months_sorted).map_err(|e| e.to_string())?;
+    let (pname, tasks) = {
+        let conn = state.db.lock().map_err(|e| e.to_string())?;
+        let pname = db::project_name(&conn, project_id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "Project not found".to_string())?;
+        let tasks =
+            db::tasks_for_export(&conn, project_id, &months_sorted).map_err(|e| e.to_string())?;
+        (pname, tasks)
+    };
+
     if tasks.is_empty() {
         return Err("No tasks in the selected months".into());
     }
@@ -272,6 +291,40 @@ fn pick_markdown_file() -> Result<Option<String>, String> {
     Ok(path.map(|p| p.to_string_lossy().into_owned()))
 }
 
+fn spawn_reminder_thread(app_handle: tauri::AppHandle, data_dir: PathBuf) {
+    std::thread::spawn(move || loop {
+        let settings = settings::load(&data_dir);
+        if !settings.reminder_enabled {
+            std::thread::sleep(std::time::Duration::from_secs(30));
+            continue;
+        }
+        let schedule = match Schedule::from_str(settings.reminder_cron.trim()) {
+            Ok(s) => s,
+            Err(_) => {
+                std::thread::sleep(std::time::Duration::from_secs(60));
+                continue;
+            }
+        };
+        let now = Local::now();
+        let Some(next) = schedule.upcoming(Local).take(1).next() else {
+            std::thread::sleep(std::time::Duration::from_secs(3600));
+            continue;
+        };
+        let until = next.signed_duration_since(now);
+        if until.num_seconds() < 0 {
+            continue;
+        }
+        if let Ok(std_dur) = until.to_std() {
+            if std_dur > std::time::Duration::from_secs(0) {
+                std::thread::sleep(std_dur);
+            }
+        }
+        if settings::load(&data_dir).reminder_enabled {
+            let _ = app_handle.emit_all("reminder-tick", ());
+        }
+    });
+}
+
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
@@ -280,6 +333,8 @@ fn main() {
             fs::create_dir_all(&data_dir).map_err(|e| e.to_string())?;
             let db_path = data_dir.join("daily_report.db");
             let conn = db::open_and_init(&db_path).map_err(|e| e.to_string())?;
+            let data_dir_bg = data_dir.clone();
+            spawn_reminder_thread(handle.clone(), data_dir_bg);
             app.manage(AppState {
                 db: Mutex::new(conn),
                 data_dir,

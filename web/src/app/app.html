@@ -3,6 +3,8 @@
     <span class="brand">Daily Report</span>
     <nav class="nav">
       <a routerLink="/projects" routerLinkActive="active">Projects</a>
+      <a routerLink="/hours" routerLinkActive="active">Hours</a>
+      <a routerLink="/hour-logs" routerLinkActive="active">Hour logs</a>
       <a routerLink="/reports" routerLinkActive="active">Reports</a>
       <a routerLink="/settings" routerLinkActive="active">Settings</a>
     </nav>
@@ -11,3 +13,9 @@
     <router-outlet />
   </main>
 </div>
+
+<app-reminder-popup
+  [open]="reminderOpen"
+  (closed)="onReminderClosed()"
+  (saved)="onReminderClosed()"
+/>

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -17,6 +17,7 @@ import { TaskDialogComponent } from '../tasks/task-dialog/task-dialog';
 })
 export class ProjectsPage implements OnInit {
   private readonly tauri = inject(TauriService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   projects: ProjectRow[] = [];
   newProjectName = '';
@@ -32,8 +33,8 @@ export class ProjectsPage implements OnInit {
   taskFormOpen = false;
   editingTaskForDialog: TaskRow | null = null;
 
-  async ngOnInit(): Promise<void> {
-    await this.refreshProjects();
+  ngOnInit(): void {
+    void this.refreshProjects();
   }
 
   async refreshProjects(): Promise<void> {
@@ -45,6 +46,7 @@ export class ProjectsPage implements OnInit {
       this.error = String(e);
     } finally {
       this.loading = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -112,6 +114,7 @@ export class ProjectsPage implements OnInit {
       alert(String(e));
     } finally {
       this.tasksLoading = false;
+      this.cdr.detectChanges();
     }
   }
 

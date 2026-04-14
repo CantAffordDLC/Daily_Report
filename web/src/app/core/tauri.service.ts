@@ -27,6 +27,13 @@ export interface MonthlyHourRow {
 export interface AppSettings {
   exportPath: string;
   defaultObsidianVault: string;
+  /** When true, the app shows a popup on each cron tick (local time). */
+  reminderEnabled: boolean;
+  /**
+   * Six-field cron: second minute hour day-of-month month day-of-week.
+   * Example: `0 0 9,17 * * 1-5` → 09:00 and 17:00 on weekdays.
+   */
+  reminderCron: string;
 }
 
 type TauriWindow = Window & {
@@ -51,8 +58,11 @@ export class TauriService {
   /**
    * Prefer low-level IPC used by @tauri-apps/api; fall back to `window.__TAURI__.tauri.invoke`
    * when `withGlobalTauri` exposes the global API (some builds only surface that reliably).
+   *
+   * Tauri resolves via the native bridge; if the UI does not update after `await`, trigger
+   * change detection in the component (e.g. `ChangeDetectorRef.detectChanges()`).
    */
-  private async invokeCmd<T>(
+  private invokeCmd<T>(
     cmd: string,
     args: Record<string, unknown> = {},
   ): Promise<T> {
@@ -64,9 +74,11 @@ export class TauriService {
     if (typeof globalInvoke === 'function') {
       return globalInvoke<T>(cmd, args);
     }
-    throw new Error(
-      'Tauri is not available here. Do not open http://localhost:4200 in Chrome, Edge, or Cursor’s Simple Browser. ' +
-        'From the repo root run: npm run dev — then use only the Daily Report desktop window.',
+    return Promise.reject(
+      new Error(
+        'Tauri is not available here. Do not open http://localhost:4200 in Chrome, Edge, or Cursor’s Simple Browser. ' +
+          'From the repo root run: npm run dev — then use only the Daily Report desktop window.',
+      ),
     );
   }
 

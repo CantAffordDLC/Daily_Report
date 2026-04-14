@@ -13,11 +13,6 @@ h2 {
   margin-top: 0;
 }
 
-h3 {
-  font-size: 1rem;
-  margin: 1rem 0 0.5rem;
-}
-
 .muted {
   color: #64748b;
   font-size: 0.9rem;
@@ -87,19 +82,6 @@ h3 {
   color: #fff;
 }
 
-.btn.secondary {
-  background: #e2e8f0;
-  color: #1e293b;
-}
-
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
 .export-msg {
   margin-top: 0.75rem;
   padding: 0.65rem;
@@ -107,27 +89,4 @@ h3 {
   border-radius: 8px;
   font-size: 0.85rem;
   white-space: pre-wrap;
-}
-
-.table-wrap {
-  overflow-x: auto;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-th,
-td {
-  text-align: left;
-  padding: 0.45rem 0.6rem;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-th {
-  background: #f8fafc;
 }

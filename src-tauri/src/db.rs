@@ -12,6 +12,10 @@ pub fn open_and_init(db_path: &Path) -> Result<Connection, rusqlite::Error> {
     conn.execute_batch(
         "
         PRAGMA foreign_keys = ON;
+        PRAGMA journal_mode = WAL;
+        PRAGMA synchronous = NORMAL;
+        PRAGMA cache_size = -8000;
+        PRAGMA mmap_size = 67108864;
         CREATE TABLE IF NOT EXISTS projects (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -26,6 +30,8 @@ pub fn open_and_init(db_path: &Path) -> Result<Connection, rusqlite::Error> {
             time_hours REAL NOT NULL,
             obsidian_uri TEXT
         );
+        CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id);
+        CREATE INDEX IF NOT EXISTS idx_tasks_project_date ON tasks(project_id, task_date);
         ",
     )?;
     migrate_obsidian_column(&conn)?;
@@ -147,11 +153,7 @@ fn map_task_rows(
             obsidian_uri: r.get(6)?,
         })
     })?;
-    let mut out = Vec::new();
-    for row in iter {
-        out.push(row?);
-    }
-    Ok(out)
+    iter.collect()
 }
 
 pub fn insert_task(

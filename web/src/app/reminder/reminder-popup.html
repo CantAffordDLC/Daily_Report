@@ -1,0 +1,89 @@
+@if (open) {
+  <div class="reminder-backdrop" (click)="backdropClick($event)" role="presentation"></div>
+  <div class="reminder-dialog" role="dialog" aria-modal="true" aria-labelledby="reminder-title">
+    <div class="reminder-header">
+      <h2 id="reminder-title">Log your time</h2>
+      <button type="button" class="btn ghost" (click)="dismiss()" [disabled]="saving">Dismiss</button>
+    </div>
+
+    <div class="reminder-body">
+      <label class="field">
+        <span class="label">Project</span>
+        <div class="combo">
+          <input
+            type="text"
+            class="input"
+            [(ngModel)]="projectQuery"
+            (input)="onProjectInput()"
+            (focus)="onProjectFocus()"
+            (blur)="onProjectBlur()"
+            placeholder="Search or type a new project name"
+            autocomplete="off"
+          />
+          @if (projectMenuOpen && (filteredProjects().length > 0 || showCreateProjectRow())) {
+            <ul class="combo-list" role="listbox">
+              @for (p of filteredProjects(); track p.id) {
+                <li role="option" tabindex="0" (mousedown)="$event.preventDefault(); pickProject(p)">
+                  {{ p.name }}
+                </li>
+              }
+              @if (showCreateProjectRow()) {
+                <li
+                  class="create-row"
+                  role="option"
+                  tabindex="0"
+                  (mousedown)="$event.preventDefault(); createProjectFromQuery()"
+                >
+                  Create project “{{ projectQuery.trim() }}”
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </label>
+
+      <label class="field">
+        <span class="label">Task</span>
+        <div class="combo">
+          <input
+            type="text"
+            class="input"
+            [(ngModel)]="taskQuery"
+            (input)="onTaskInput()"
+            (focus)="onTaskFocus()"
+            (blur)="onTaskBlur()"
+            placeholder="Search past tasks or type a new name"
+            autocomplete="off"
+            [disabled]="!projectQuery.trim() && selectedProjectId == null"
+          />
+          @if (taskMenuOpen && taskSuggestions.length > 0 && (projectQuery.trim() || selectedProjectId != null)) {
+            <ul class="combo-list" role="listbox">
+              @for (t of filteredTaskSuggestions(); track t) {
+                <li role="option" tabindex="0" (mousedown)="$event.preventDefault(); pickTask(t)">
+                  {{ t }}
+                </li>
+              }
+            </ul>
+          }
+        </div>
+      </label>
+
+      <div class="row">
+        <label class="field">
+          <span class="label">Date</span>
+          <input type="date" class="input" [(ngModel)]="taskDate" />
+        </label>
+        <label class="field narrow">
+          <span class="label">Hours</span>
+          <input type="number" class="input" step="0.25" min="0" [(ngModel)]="timeHours" />
+        </label>
+      </div>
+    </div>
+
+    <div class="reminder-footer">
+      <button type="button" class="btn primary" (click)="submit()" [disabled]="saving">
+        {{ saving ? 'Saving…' : 'Save entry' }}
+      </button>
+    </div>
+  </div>
+}

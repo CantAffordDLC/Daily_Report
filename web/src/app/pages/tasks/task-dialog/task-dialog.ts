@@ -1,4 +1,5 @@
 import {
+  ChangeDetectorRef,
   Component,
   EventEmitter,
   Input,
@@ -20,6 +21,7 @@ import { TauriService, TaskRow } from '../../../core/tauri.service';
 })
 export class TaskDialogComponent implements OnChanges {
   private readonly tauri = inject(TauriService);
+  private readonly cdr = inject(ChangeDetectorRef);
   /** Backend still expects `day_type` until you remove it; fixed value from UI. */
   private static readonly DAY_TYPE = 'WORKDAY' as const;
 
@@ -40,30 +42,32 @@ export class TaskDialogComponent implements OnChanges {
 
   saving = false;
 
-  async ngOnChanges(changes: SimpleChanges): Promise<void> {
+  ngOnChanges(changes: SimpleChanges): void {
     if (!this.open) return;
-    if (changes['open']?.currentValue === true || changes['editTask']) {
-      await this.syncFormFromInputs();
+    if (!(changes['open']?.currentValue === true || changes['editTask'])) {
+      return;
     }
-  }
-
-  private async syncFormFromInputs(): Promise<void> {
     const t = this.editTask;
     if (t) {
       this.taskDate = t.taskDate;
       this.taskName = t.description;
       this.timeHours = t.timeHours;
       this.obsidianDraft = t.obsidianUri ?? '';
-    } else {
-      this.taskName = '';
-      this.timeHours = 1;
-      this.obsidianDraft = '';
-      try {
-        this.taskDate = await this.tauri.getCurrentDate();
-      } catch {
-        this.taskDate = new Date().toISOString().slice(0, 10);
-      }
+      return;
     }
+    this.taskName = '';
+    this.timeHours = 1;
+    this.obsidianDraft = '';
+    void this.tauri.getCurrentDate().then(
+      (d) => {
+        this.taskDate = d;
+        this.cdr.detectChanges();
+      },
+      () => {
+        this.taskDate = new Date().toISOString().slice(0, 10);
+        this.cdr.detectChanges();
+      },
+    );
   }
 
   dismiss(): void {
@@ -80,6 +84,7 @@ export class TaskDialogComponent implements OnChanges {
     try {
       const path = await this.tauri.pickMarkdownFile();
       if (path) this.obsidianDraft = path;
+      this.cdr.detectChanges();
     } catch (e) {
       alert(String(e));
     }
@@ -133,6 +138,7 @@ export class TaskDialogComponent implements OnChanges {
       alert(String(e));
     } finally {
       this.saving = false;
+      this.cdr.detectChanges();
     }
   }
 }

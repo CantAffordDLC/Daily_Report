@@ -1,11 +1,7 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  TauriService,
-  ProjectRow,
-  MonthlyHourRow,
-} from '../../core/tauri.service';
+import { TauriService, ProjectRow } from '../../core/tauri.service';
 
 @Component({
   selector: 'app-reports',
@@ -16,17 +12,12 @@ import {
 })
 export class ReportsPage implements OnInit {
   private readonly tauri = inject(TauriService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   projects: ProjectRow[] = [];
   exportProjectId: number | null = null;
   monthOptions: { value: string; label: string }[] = [];
   selectedMonths = new Set<string>();
-
-  logsYear: number | '' = '';
-  yearChoices: number[] = [];
-  logRows: MonthlyHourRow[] = [];
-  monthTotals: { month: string; hours: number }[] = [];
-  logsLoading = false;
 
   exportMessage: string | null = null;
 
@@ -38,10 +29,7 @@ export class ReportsPage implements OnInit {
       const label = d.toLocaleString('default', { month: 'long', year: 'numeric' });
       this.monthOptions.push({ value: ym, label: `${label} (${ym})` });
     }
-    const y = now.getFullYear();
-    for (let i = 0; i < 6; i++) this.yearChoices.push(y - i);
     void this.loadProjects();
-    void this.refreshLogs();
   }
 
   async loadProjects(): Promise<void> {
@@ -52,6 +40,8 @@ export class ReportsPage implements OnInit {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      this.cdr.detectChanges();
     }
   }
 
@@ -80,31 +70,8 @@ export class ReportsPage implements OnInit {
       this.exportMessage = `Exported to:\n${path}`;
     } catch (e) {
       alert(String(e));
-    }
-  }
-
-  async refreshLogs(): Promise<void> {
-    this.logsLoading = true;
-    try {
-      const year =
-        this.logsYear === '' || this.logsYear === null
-          ? null
-          : Number(this.logsYear);
-      this.logRows = await this.tauri.getMonthlyHourLogs(year);
-      const byMonth: Record<string, number> = {};
-      for (const r of this.logRows) {
-        byMonth[r.yearMonth] = (byMonth[r.yearMonth] || 0) + r.totalHours;
-      }
-      this.monthTotals = Object.keys(byMonth)
-        .sort()
-        .reverse()
-        .map((month) => ({ month, hours: byMonth[month] }));
-    } catch (e) {
-      console.error(e);
-      this.logRows = [];
-      this.monthTotals = [];
     } finally {
-      this.logsLoading = false;
+      this.cdr.detectChanges();
     }
   }
 }
