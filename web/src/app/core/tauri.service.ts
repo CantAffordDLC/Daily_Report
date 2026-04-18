@@ -145,8 +145,8 @@ export class TauriService {
     return this.invokeCmd('open_obsidian_uri', { uri });
   }
 
-  exportProjectTasksXlsx(projectId: number, months: string[]): Promise<string> {
-    return this.invokeCmd<string>('export_project_tasks_xlsx', { projectId, months });
+  exportTasksXlsx(months: string[]): Promise<string> {
+    return this.invokeCmd<string>('export_tasks_xlsx', { months });
   }
 
   getMonthlyHourLogs(year: number | null): Promise<MonthlyHourRow[]> {

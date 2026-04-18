@@ -1,5 +1,5 @@
 use crate::settings::AppSettings;
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection};
 use serde::Serialize;
 use std::fs;
 use std::path::Path;
@@ -271,9 +271,8 @@ fn normalize_obsidian_uri(input: Option<&str>, vault: &str) -> Option<String> {
     ))
 }
 
-pub fn tasks_for_export(
+pub fn tasks_for_export_all_months(
     conn: &Connection,
-    project_id: i64,
     months: &[String],
 ) -> Result<Vec<TaskRow>, rusqlite::Error> {
     if months.is_empty() {
@@ -282,11 +281,11 @@ pub fn tasks_for_export(
     let mut all = Vec::new();
     let mut stmt = conn.prepare(
         "SELECT id, project_id, task_date, day_type, description, time_hours, obsidian_uri
-         FROM tasks WHERE project_id = ?1 AND strftime('%Y-%m', task_date) = ?2
+         FROM tasks WHERE strftime('%Y-%m', task_date) = ?1
          ORDER BY task_date, id",
     )?;
     for m in months {
-        let rows = stmt.query_map(params![project_id, m], |r| {
+        let rows = stmt.query_map(params![m], |r| {
             Ok(TaskRow {
                 id: r.get(0)?,
                 project_id: r.get(1)?,
@@ -307,11 +306,6 @@ pub fn tasks_for_export(
             .then_with(|| a.id.cmp(&b.id))
     });
     Ok(all)
-}
-
-pub fn project_name(conn: &Connection, project_id: i64) -> Result<Option<String>, rusqlite::Error> {
-    let mut stmt = conn.prepare("SELECT name FROM projects WHERE id = ?1")?;
-    stmt.query_row(params![project_id], |r| r.get(0)).optional()
 }
 
 pub fn monthly_hour_logs(

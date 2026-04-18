@@ -26,26 +26,10 @@ h2 {
   background: #fff;
 }
 
-.block {
-  display: block;
-  margin-bottom: 0.75rem;
-}
-
 .label {
   font-size: 0.85rem;
   font-weight: 600;
   margin: 0.75rem 0 0.35rem;
-}
-
-.input {
-  display: block;
-  margin-top: 0.25rem;
-  width: 100%;
-  max-width: 320px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 0.5rem 0.65rem;
-  font: inherit;
 }
 
 .month-grid {

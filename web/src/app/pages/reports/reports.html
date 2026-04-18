@@ -3,19 +3,7 @@
 
   <section class="card">
     <h2>Export to Excel</h2>
-    <p class="muted">Choose a project and one or more months. Files are saved to your export folder in Settings.</p>
-    @if (projects.length) {
-      <label class="block">
-        Project
-        <select class="input" [(ngModel)]="exportProjectId">
-          @for (p of projects; track p.id) {
-            <option [ngValue]="p.id">{{ p.name }}</option>
-          }
-        </select>
-      </label>
-    } @else {
-      <p class="muted">Create a project first.</p>
-    }
+    <p class="muted">Choose one or more months. Files are saved to your export folder in Settings.</p>
     <p class="label">Months</p>
     <div class="month-grid">
       @for (m of monthOptions; track m.value) {

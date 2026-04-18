@@ -310,7 +310,6 @@
   async function refreshAllProjectSelects() {
     await fillProjectSelect($('#dailyProjectSelect'), true);
     await fillProjectSelect($('#manageProjectSelect'), true);
-    await fillProjectSelect($('#exportProjectSelect'), true);
     const v = $('#dailyProjectSelect').val();
     if (v) $('#manageProjectSelect').val(v);
   }
@@ -344,11 +343,6 @@
   }
 
   async function runExport() {
-    const pid = parseInt($('#exportProjectSelect').val(), 10);
-    if (!pid) {
-      alert('Select a project to export.');
-      return;
-    }
     const months = $('#exportMonthChecks input:checked')
       .map(function () {
         return $(this).val();
@@ -359,8 +353,7 @@
       return;
     }
     try {
-      const path = await invoke('export_project_tasks_xlsx', {
-        projectId: pid,
+      const path = await invoke('export_tasks_xlsx', {
         months,
       });
       alert('Exported to:\n' + path);

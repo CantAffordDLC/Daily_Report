@@ -168,11 +168,7 @@ fn month_token_ok(m: &str) -> bool {
 }
 
 #[tauri::command]
-fn export_project_tasks_xlsx(
-    state: State<AppState>,
-    project_id: i64,
-    months: Vec<String>,
-) -> Result<String, String> {
+fn export_tasks_xlsx(state: State<AppState>, months: Vec<String>) -> Result<String, String> {
     if months.is_empty() {
         return Err("Select at least one month to export".into());
     }
@@ -189,23 +185,17 @@ fn export_project_tasks_xlsx(
     let export_dir = PathBuf::from(&settings.export_path);
     fs::create_dir_all(&export_dir).map_err(|e| e.to_string())?;
 
-    let (pname, tasks) = {
+    let tasks = {
         let conn = state.db.lock().map_err(|e| e.to_string())?;
-        let pname = db::project_name(&conn, project_id)
-            .map_err(|e| e.to_string())?
-            .ok_or_else(|| "Project not found".to_string())?;
-        let tasks =
-            db::tasks_for_export(&conn, project_id, &months_sorted).map_err(|e| e.to_string())?;
-        (pname, tasks)
+        db::tasks_for_export_all_months(&conn, &months_sorted).map_err(|e| e.to_string())?
     };
 
     if tasks.is_empty() {
         return Err("No tasks in the selected months".into());
     }
 
-    let safe = sanitize_filename(&pname);
     let suffix = months_suffix(&months_sorted);
-    let filename = format!("{}_export_{}.xlsx", safe, suffix);
+    let filename = format!("daily_report_export_{}.xlsx", suffix);
     let out_path = export_dir.join(&filename);
 
     write_tasks_xlsx(&out_path, &tasks).map_err(|e| e.to_string())?;
@@ -218,20 +208,6 @@ fn months_suffix(months: &[String]) -> String {
     } else {
         format!("{}_to_{}", months.first().unwrap(), months.last().unwrap())
     }
-}
-
-fn sanitize_filename(name: &str) -> String {
-    name.chars()
-        .map(|c| match c {
-            '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
-            c if c.is_control() => '_',
-            c => c,
-        })
-        .collect::<String>()
-        .trim()
-        .chars()
-        .take(80)
-        .collect()
 }
 
 fn write_tasks_xlsx(path: &Path, tasks: &[TaskRow]) -> Result<(), rust_xlsxwriter::XlsxError> {
@@ -353,7 +329,7 @@ fn main() {
             create_task,
             update_task,
             delete_task,
-            export_project_tasks_xlsx,
+            export_tasks_xlsx,
             get_monthly_hour_logs,
             open_obsidian_uri,
             pick_markdown_file,
