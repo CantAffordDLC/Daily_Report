@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone, inject } from '@angular/core';
 import { invoke as ipcInvoke } from '@tauri-apps/api/tauri';
 
 export interface ProjectRow {
@@ -55,31 +55,42 @@ export function isTauriRuntime(): boolean {
 
 @Injectable({ providedIn: 'root' })
 export class TauriService {
+  private readonly zone = inject(NgZone);
+
   /**
    * Prefer low-level IPC used by @tauri-apps/api; fall back to `window.__TAURI__.tauri.invoke`
    * when `withGlobalTauri` exposes the global API (some builds only surface that reliably).
    *
-   * Tauri resolves via the native bridge; if the UI does not update after `await`, trigger
-   * change detection in the component (e.g. `ChangeDetectorRef.detectChanges()`).
+   * Tauri resolves promises outside Angular's zone; re-enter the zone so the UI updates
+   * without waiting for the next keyboard/mouse event (e.g. Escape).
    */
   private invokeCmd<T>(
     cmd: string,
     args: Record<string, unknown> = {},
   ): Promise<T> {
     const w = window as TauriWindow;
+    let raw: Promise<T>;
     if (typeof w.__TAURI_IPC__ === 'function') {
-      return ipcInvoke<T>(cmd, args);
+      raw = ipcInvoke<T>(cmd, args);
+    } else {
+      const globalInvoke = w.__TAURI__?.tauri?.invoke;
+      if (typeof globalInvoke === 'function') {
+        raw = globalInvoke<T>(cmd, args);
+      } else {
+        raw = Promise.reject(
+          new Error(
+            'Tauri is not available here. Do not open http://localhost:4200 in Chrome, Edge, or Cursor’s Simple Browser. ' +
+              'From the repo root run: npm run dev — then use only the Daily Report desktop window.',
+          ),
+        );
+      }
     }
-    const globalInvoke = w.__TAURI__?.tauri?.invoke;
-    if (typeof globalInvoke === 'function') {
-      return globalInvoke<T>(cmd, args);
-    }
-    return Promise.reject(
-      new Error(
-        'Tauri is not available here. Do not open http://localhost:4200 in Chrome, Edge, or Cursor’s Simple Browser. ' +
-          'From the repo root run: npm run dev — then use only the Daily Report desktop window.',
-      ),
-    );
+
+    return new Promise<T>((resolve, reject) => {
+      void raw
+        .then((v) => this.zone.run(() => resolve(v)))
+        .catch((e) => this.zone.run(() => reject(e)));
+    });
   }
 
   getCurrentDate(): Promise<string> {

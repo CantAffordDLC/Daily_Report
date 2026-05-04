@@ -88,6 +88,7 @@ export class ProjectsPage implements OnInit {
     this.tasks = [];
     this.taskFormOpen = false;
     this.editingTaskForDialog = null;
+    this.cdr.detectChanges();
   }
 
   openAddTaskPopup(): void {
@@ -98,11 +99,13 @@ export class ProjectsPage implements OnInit {
   openEditTaskPopup(t: TaskRow): void {
     this.editingTaskForDialog = t;
     this.taskFormOpen = true;
+    this.cdr.detectChanges();
   }
 
   onTaskDialogClosed(): void {
     this.taskFormOpen = false;
     this.editingTaskForDialog = null;
+    this.cdr.detectChanges();
   }
 
   async loadTasks(): Promise<void> {
