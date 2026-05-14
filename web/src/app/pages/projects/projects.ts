@@ -22,6 +22,8 @@ export class ProjectsPage implements OnInit {
   allProjects: ProjectRow[] = [];
   /** Project IDs that have at least one task with hours this month. */
   monthlyProjectIds = new Set<number>();
+  /** All tasks across all projects, used for search. */
+  allTasks: TaskRow[] = [];
   searchQuery = '';
   loading = false;
   error: string | null = null;
@@ -50,11 +52,13 @@ export class ProjectsPage implements OnInit {
     this.loading = true;
     this.error = null;
     try {
-      const [projects, logs] = await Promise.all([
+      const [projects, logs, tasks] = await Promise.all([
         this.tauri.listProjects(),
         this.tauri.getMonthlyHourLogs(new Date().getFullYear()),
+        this.tauri.listAllTasks(),
       ]);
       this.allProjects = projects;
+      this.allTasks = tasks;
       this.monthlyProjectIds = new Set(
         logs
           .filter((r) => r.yearMonth === this.currentYearMonth)
@@ -78,8 +82,13 @@ export class ProjectsPage implements OnInit {
     if (!q) {
       return this.allProjects.filter((p) => this.monthlyProjectIds.has(p.id));
     }
-    return this.allProjects.filter((p) =>
-      p.name.toLowerCase().includes(q),
+    const matchingProjectIds = new Set(
+      this.allTasks
+        .filter((t) => t.description.toLowerCase().includes(q))
+        .map((t) => t.projectId),
+    );
+    return this.allProjects.filter(
+      (p) => p.name.toLowerCase().includes(q) || matchingProjectIds.has(p.id),
     );
   }
 
@@ -193,7 +202,10 @@ export class ProjectsPage implements OnInit {
     if (!this.activeProject) return;
     this.tasksLoading = true;
     try {
-      this.tasks = await this.tauri.listTasksByProject(this.activeProject.id);
+      [this.tasks, this.allTasks] = await Promise.all([
+        this.tauri.listTasksByProject(this.activeProject.id),
+        this.tauri.listAllTasks(),
+      ]);
     } catch (e) {
       alert(String(e));
     } finally {

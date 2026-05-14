@@ -85,6 +85,12 @@ fn delete_project(state: State<AppState>, id: i64) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn list_all_tasks(state: State<AppState>) -> Result<Vec<db::TaskRow>, String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    db::list_all_tasks(&conn).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn list_tasks_by_date(
     state: State<AppState>,
     project_id: i64,
@@ -334,6 +340,7 @@ fn main() {
             create_project,
             rename_project,
             delete_project,
+            list_all_tasks,
             list_tasks_by_date,
             list_tasks_by_project,
             create_task,

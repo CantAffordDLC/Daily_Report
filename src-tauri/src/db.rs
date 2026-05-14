@@ -149,6 +149,14 @@ pub fn list_tasks_for_project(
     map_task_rows(&mut stmt, params![project_id])
 }
 
+pub fn list_all_tasks(conn: &Connection) -> Result<Vec<TaskRow>, rusqlite::Error> {
+    let mut stmt = conn.prepare(
+        "SELECT id, project_id, task_date, day_type, description, time_hours, obsidian_uri
+         FROM tasks ORDER BY task_date DESC, id DESC",
+    )?;
+    map_task_rows(&mut stmt, [])
+}
+
 fn map_task_rows(
     stmt: &mut rusqlite::Statement,
     params: impl rusqlite::Params,

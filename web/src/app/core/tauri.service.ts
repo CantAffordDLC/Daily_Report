@@ -121,6 +121,10 @@ export class TauriService {
     return this.invokeCmd('delete_project', { id });
   }
 
+  listAllTasks(): Promise<TaskRow[]> {
+    return this.invokeCmd<TaskRow[]>('list_all_tasks');
+  }
+
   listTasksByProject(projectId: number): Promise<TaskRow[]> {
     return this.invokeCmd<TaskRow[]>('list_tasks_by_project', { projectId });
   }
