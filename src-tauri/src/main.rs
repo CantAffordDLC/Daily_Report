@@ -198,9 +198,12 @@ fn create_task(
                     let _ = fs::write(&note_path, content);
                 }
                 let abs = fs::canonicalize(&note_path).unwrap_or(note_path);
+                let abs_str = abs.to_string_lossy();
+                // canonicalize on Windows prepends \\?\ — Obsidian can't handle it
+                let clean = abs_str.strip_prefix(r"\\?\").unwrap_or(&abs_str);
                 Some(format!(
                     "obsidian://open?path={}",
-                    urlencoding::encode(&abs.to_string_lossy())
+                    urlencoding::encode(clean)
                 ))
             } else {
                 None
