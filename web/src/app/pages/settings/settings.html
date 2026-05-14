@@ -42,7 +42,7 @@
 
     <div class="block toggle-block">
       <label class="check">
-        <input type="checkbox" [(ngModel)]="obsidianAutoCreate" />
+        <input type="checkbox" [(ngModel)]="obsidianAutoCreate" [disabled]="!obsidianProjectsFolder.trim()" />
         Auto-create folders &amp; notes
       </label>
       <p class="hint">
