@@ -9,6 +9,10 @@ pub struct AppSettings {
     pub export_path: String,
     pub default_obsidian_vault: String,
     #[serde(default)]
+    pub obsidian_vault_path: String,
+    #[serde(default)]
+    pub obsidian_auto_create: bool,
+    #[serde(default)]
     pub reminder_enabled: bool,
     /// Six-field cron (second minute hour day month weekday), local time.
     #[serde(default = "default_reminder_cron")]
@@ -28,6 +32,8 @@ impl Default for AppSettings {
         Self {
             export_path,
             default_obsidian_vault: String::new(),
+            obsidian_vault_path: String::new(),
+            obsidian_auto_create: false,
             reminder_enabled: false,
             reminder_cron: default_reminder_cron(),
         }

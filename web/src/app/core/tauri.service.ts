@@ -34,6 +34,8 @@ export interface MonthlyHourRow {
 export interface AppSettings {
   exportPath: string;
   defaultObsidianVault: string;
+  obsidianVaultPath: string;
+  obsidianAutoCreate: boolean;
   /** When true, the app shows a popup on each cron tick (local time). */
   reminderEnabled: boolean;
   /**
@@ -173,6 +175,10 @@ export class TauriService {
 
   pickMarkdownFile(): Promise<string | null> {
     return this.invokeCmd<string | null>('pick_markdown_file');
+  }
+
+  pickFolder(): Promise<string | null> {
+    return this.invokeCmd<string | null>('pick_folder');
   }
 
   openObsidianUri(uri: string): Promise<void> {

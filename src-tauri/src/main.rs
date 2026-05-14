@@ -60,13 +60,35 @@ fn list_projects(state: State<AppState>) -> Result<Vec<ProjectRow>, String> {
     db::list_projects(&conn).map_err(|e| e.to_string())
 }
 
+fn sanitize_filename(s: &str) -> String {
+    let out: String = s
+        .chars()
+        .map(|c| match c {
+            '\\' | '/' | ':' | '*' | '?' | '"' | '<' | '>' | '|' | '\0' => '_',
+            c => c,
+        })
+        .collect();
+    let trimmed = out.trim().trim_matches('.');
+    if trimmed.is_empty() {
+        "unnamed".to_string()
+    } else {
+        trimmed.chars().take(100).collect()
+    }
+}
+
 #[tauri::command]
 fn create_project(state: State<AppState>, name: String) -> Result<i64, String> {
     if name.trim().is_empty() {
         return Err("Project name is required".into());
     }
+    let s = settings::load(&state.data_dir);
     let conn = state.db.lock().map_err(|e| e.to_string())?;
-    db::create_project(&conn, &name).map_err(|e| e.to_string())
+    let id = db::create_project(&conn, &name).map_err(|e| e.to_string())?;
+    if s.obsidian_auto_create && !s.obsidian_vault_path.trim().is_empty() {
+        let folder = Path::new(s.obsidian_vault_path.trim()).join(sanitize_filename(name.trim()));
+        let _ = fs::create_dir_all(&folder);
+    }
+    Ok(id)
 }
 
 #[tauri::command]
@@ -144,6 +166,43 @@ fn create_task(
     }
     let s = settings::load(&state.data_dir);
     let conn = state.db.lock().map_err(|e| e.to_string())?;
+
+    let user_provided_obs = obsidian_input.as_deref().map(|v| v.trim()).unwrap_or("").is_empty();
+    let auto_obs = s.obsidian_auto_create
+        && !s.obsidian_vault_path.trim().is_empty()
+        && user_provided_obs;
+
+    let effective_obs: Option<String> = if auto_obs {
+        if let Ok(projects) = db::list_projects(&conn) {
+            if let Some(project) = projects.iter().find(|p| p.id == project_id) {
+                let vault = Path::new(s.obsidian_vault_path.trim());
+                let folder = vault.join(sanitize_filename(&project.name));
+                let _ = fs::create_dir_all(&folder);
+                let note_path = folder.join(format!("{}.md", sanitize_filename(description.trim())));
+                if !note_path.exists() {
+                    let content = format!(
+                        "# {}\n\n**Project:** {}\n**Date:** {}\n\n## Notes\n\n",
+                        description.trim(),
+                        project.name,
+                        task_date
+                    );
+                    let _ = fs::write(&note_path, content);
+                }
+                let abs = fs::canonicalize(&note_path).unwrap_or(note_path);
+                Some(format!(
+                    "obsidian://open?path={}",
+                    urlencoding::encode(&abs.to_string_lossy())
+                ))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    } else {
+        obsidian_input
+    };
+
     db::insert_task(
         &conn,
         project_id,
@@ -151,7 +210,7 @@ fn create_task(
         &day_type,
         &description,
         time_hours,
-        obsidian_input.as_deref(),
+        effective_obs.as_deref(),
         &s,
     )
     .map_err(|e| e.to_string())
@@ -300,6 +359,12 @@ fn pick_markdown_file() -> Result<Option<String>, String> {
     Ok(path.map(|p| p.to_string_lossy().into_owned()))
 }
 
+#[tauri::command]
+fn pick_folder() -> Result<Option<String>, String> {
+    let path = FileDialogBuilder::new().pick_folder();
+    Ok(path.map(|p| p.to_string_lossy().into_owned()))
+}
+
 fn spawn_reminder_thread(app_handle: tauri::AppHandle, data_dir: PathBuf) {
     std::thread::spawn(move || loop {
         let settings = settings::load(&data_dir);
@@ -370,6 +435,7 @@ fn main() {
             get_monthly_hour_logs,
             open_obsidian_uri,
             pick_markdown_file,
+            pick_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

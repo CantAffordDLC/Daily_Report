@@ -13,6 +13,51 @@ h1 {
   border-radius: 12px;
   padding: 1.25rem;
   background: #fff;
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  margin: 0 0 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0f766e;
+}
+
+.save-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.25rem;
+}
+
+.path-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.35rem;
+}
+
+.path-row .input {
+  margin-top: 0;
+  flex: 1;
+}
+
+.toggle-block {
+  margin-bottom: 0;
+}
+
+.btn.secondary {
+  background: #e2e8f0;
+  color: #1e293b;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 0.85rem;
+  font: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .block {
@@ -54,9 +99,8 @@ h1 {
 }
 
 .reminder-block {
-  padding-top: 1rem;
-  border-top: 1px solid #f1f5f9;
-  margin-top: 1rem;
+  padding-top: 0;
+  margin-top: 0;
 }
 
 .check {

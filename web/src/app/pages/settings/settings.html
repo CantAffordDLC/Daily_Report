@@ -1,28 +1,65 @@
 <div class="page">
   <h1>Settings</h1>
 
+  <!-- Export -->
   <section class="card">
+    <h2 class="section-title">Export</h2>
     <label class="block">
       Export folder
       <input type="text" class="input wide" [(ngModel)]="exportPath" placeholder="Folder for Excel exports" />
     </label>
+  </section>
+
+  <!-- Obsidian -->
+  <section class="card">
+    <h2 class="section-title">Obsidian</h2>
+
     <label class="block">
-      Default Obsidian vault name
+      Default vault name
       <input
         type="text"
         class="input wide"
         [(ngModel)]="defaultObsidianVault"
-        placeholder="Used when you enter a vault-relative note path (not full URI)"
+        placeholder="Used when you enter a vault-relative note path"
       />
     </label>
 
-    <div class="block reminder-block">
+    <label class="block">
+      Vault folder path
+      <div class="path-row">
+        <input
+          type="text"
+          class="input wide"
+          [(ngModel)]="obsidianVaultPath"
+          placeholder="Absolute path to your Obsidian vault folder"
+        />
+        <button type="button" class="btn secondary" (click)="browseVaultPath()">Browse…</button>
+      </div>
+    </label>
+
+    <div class="block toggle-block">
+      <label class="check">
+        <input type="checkbox" [(ngModel)]="obsidianAutoCreate" />
+        Auto-create folders &amp; notes
+      </label>
+      <p class="hint">
+        When enabled: creating a <strong>project</strong> makes a subfolder inside your vault with the same name.
+        Creating a <strong>task</strong> creates a <code>.md</code> note in that folder and links it to the task automatically.
+      </p>
+    </div>
+  </section>
+
+  <!-- Reminders -->
+  <section class="card">
+    <h2 class="section-title">Reminders</h2>
+
+    <div class="block">
       <label class="check">
         <input type="checkbox" [(ngModel)]="reminderEnabled" />
         Time log reminder (popup on a schedule)
       </label>
       <label class="block tight">
-        Cron schedule (local time, six fields: second minute hour day month weekday)
+        Cron schedule (local time — six fields: second minute hour day month weekday)
         <input
           type="text"
           class="input wide mono"
@@ -33,16 +70,18 @@
       </label>
       <p class="hint">
         Examples:
-        <code>0 0 9 * * *</code> daily at 09:00;
-        <code>0 0 */2 * * *</code> every two hours on the hour;
+        <code>0 0 9 * * *</code> daily at 09:00 &nbsp;·&nbsp;
+        <code>0 0 */2 * * *</code> every two hours &nbsp;·&nbsp;
         <code>0 0 17 * * 1-5</code> weekdays at 17:00.
-        The app must stay open for the reminder to run.
+        The app must stay open for the reminder to fire.
       </p>
     </div>
+  </section>
 
-    <button type="button" class="btn primary" (click)="save()">Save</button>
+  <div class="save-row">
+    <button type="button" class="btn primary" (click)="save()">Save settings</button>
     @if (message) {
       <p class="ok">{{ message }}</p>
     }
-  </section>
+  </div>
 </div>
