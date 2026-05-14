@@ -24,7 +24,7 @@
   }
 
   @if (!loading && !normalizedQuery) {
-    <p class="muted small month-hint">Showing projects with hours in {{ currentYearMonth }}</p>
+    <p class="month-hint">Showing projects with hours in <span class="month-badge">{{ currentYearMonth }}</span></p>
   }
 
   <ul class="project-grid">
