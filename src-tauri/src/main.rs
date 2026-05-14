@@ -70,6 +70,15 @@ fn create_project(state: State<AppState>, name: String) -> Result<i64, String> {
 }
 
 #[tauri::command]
+fn rename_project(state: State<AppState>, id: i64, name: String) -> Result<(), String> {
+    if name.trim().is_empty() {
+        return Err("Project name is required".into());
+    }
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    db::rename_project(&conn, id, &name).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn delete_project(state: State<AppState>, id: i64) -> Result<(), String> {
     let conn = state.db.lock().map_err(|e| e.to_string())?;
     db::delete_project(&conn, id).map_err(|e| e.to_string())
@@ -323,6 +332,7 @@ fn main() {
             set_settings,
             list_projects,
             create_project,
+            rename_project,
             delete_project,
             list_tasks_by_date,
             list_tasks_by_project,

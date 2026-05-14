@@ -24,6 +24,14 @@ export class ProjectsPage implements OnInit {
   loading = false;
   error: string | null = null;
 
+  renamingProjectId: number | null = null;
+  renameDraft = '';
+
+  readonly currentYearMonth: string = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  })();
+
   modalOpen = false;
   activeProject: ProjectRow | null = null;
   tasks: TaskRow[] = [];
@@ -59,6 +67,40 @@ export class ProjectsPage implements OnInit {
       await this.refreshProjects();
     } catch (e) {
       alert(String(e));
+    }
+  }
+
+  startRename(p: ProjectRow, ev: Event): void {
+    ev.stopPropagation();
+    this.renamingProjectId = p.id;
+    this.renameDraft = p.name;
+    this.cdr.detectChanges();
+  }
+
+  cancelRename(): void {
+    this.renamingProjectId = null;
+    this.renameDraft = '';
+    this.cdr.detectChanges();
+  }
+
+  async commitRename(p: ProjectRow): Promise<void> {
+    const name = this.renameDraft.trim();
+    if (!name || name === p.name) {
+      this.cancelRename();
+      return;
+    }
+    try {
+      await this.tauri.renameProject(p.id, name);
+      if (this.activeProject?.id === p.id) {
+        this.activeProject = { ...this.activeProject, name };
+      }
+      await this.refreshProjects();
+    } catch (e) {
+      alert(String(e));
+    } finally {
+      this.renamingProjectId = null;
+      this.renameDraft = '';
+      this.cdr.detectChanges();
     }
   }
 
@@ -106,6 +148,10 @@ export class ProjectsPage implements OnInit {
     this.taskFormOpen = false;
     this.editingTaskForDialog = null;
     this.cdr.detectChanges();
+  }
+
+  get tasksThisMonth(): TaskRow[] {
+    return this.tasks.filter((t) => t.taskDate.startsWith(this.currentYearMonth));
   }
 
   async loadTasks(): Promise<void> {

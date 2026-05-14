@@ -113,6 +113,10 @@ export class TauriService {
     return this.invokeCmd<number>('create_project', { name });
   }
 
+  renameProject(id: number, name: string): Promise<void> {
+    return this.invokeCmd('rename_project', { id, name });
+  }
+
   deleteProject(id: number): Promise<void> {
     return this.invokeCmd('delete_project', { id });
   }

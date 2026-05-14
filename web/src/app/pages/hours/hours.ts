@@ -31,7 +31,7 @@ export class HoursPage implements OnInit {
   /** Project ids that are collapsed (hidden task lists). */
   private collapsedProjectIds = new Set<number>();
   /** Draft "add hours" values keyed by task id (applied together via the bottom button). */
-  hourDraft: Record<number, string> = {};
+  hourDraft: Record<number, number | null> = {};
   /** True while batch-saving pending hour updates. */
   savingAll = false;
 
@@ -148,9 +148,8 @@ export class HoursPage implements OnInit {
     for (const [idStr, raw] of Object.entries(this.hourDraft)) {
       const id = Number(idStr);
       if (!Number.isInteger(id)) continue;
-      const trimmed = (raw ?? '').trim();
-      if (!trimmed) continue;
-      const delta = parseFloat(trimmed.replace(',', '.'));
+      if (raw === null || raw === undefined) continue;
+      const delta = Number(raw);
       const task = taskById.get(id);
       if (!task) continue;
       if (!Number.isFinite(delta) || delta <= 0) {
@@ -186,7 +185,7 @@ export class HoursPage implements OnInit {
         });
       }
       for (const { task } of pending) {
-        this.hourDraft[task.id] = '';
+        this.hourDraft[task.id] = null;
       }
       await this.refresh();
     } catch (e) {

@@ -27,19 +27,51 @@
 
   <ul class="project-grid">
     @for (p of projects; track p.id) {
-      <li class="project-card" (click)="openProject(p)" role="button" tabindex="0" (keyup.enter)="openProject(p)">
-        <div class="project-card-body">
-          <h2>{{ p.name }}</h2>
-          <span class="muted small">ID {{ p.id }}</span>
-        </div>
-        <button
-          type="button"
-          class="btn danger ghost card-delete"
-          (click)="deleteProject(p, $event)"
-          title="Delete project"
-        >
-          Delete
-        </button>
+      <li
+        class="project-card"
+        [class.renaming]="renamingProjectId === p.id"
+        (click)="renamingProjectId !== p.id && openProject(p)"
+        role="button"
+        tabindex="0"
+        (keyup.enter)="renamingProjectId !== p.id && openProject(p)"
+      >
+        @if (renamingProjectId === p.id) {
+          <div class="rename-row" (click)="$event.stopPropagation()">
+            <input
+              type="text"
+              class="input rename-input"
+              [(ngModel)]="renameDraft"
+              (keyup.enter)="commitRename(p)"
+              (keyup.escape)="cancelRename()"
+              autofocus
+            />
+            <button type="button" class="btn primary" (click)="commitRename(p)">Save</button>
+            <button type="button" class="btn ghost" (click)="cancelRename()">Cancel</button>
+          </div>
+        } @else {
+          <div class="project-card-body">
+            <h2>{{ p.name }}</h2>
+            <span class="muted small">ID {{ p.id }}</span>
+          </div>
+          <div class="card-actions">
+            <button
+              type="button"
+              class="btn ghost card-action"
+              (click)="startRename(p, $event)"
+              title="Rename project"
+            >
+              Rename
+            </button>
+            <button
+              type="button"
+              class="btn danger ghost card-action"
+              (click)="deleteProject(p, $event)"
+              title="Delete project"
+            >
+              Delete
+            </button>
+          </div>
+        }
       </li>
     }
   </ul>
@@ -60,13 +92,13 @@
     <div class="modal-body">
       <section>
         <div class="section-head">
-          <h3>Tasks</h3>
+          <h3>Tasks <span class="month-badge">{{ currentYearMonth }}</span></h3>
           <button type="button" class="btn primary" (click)="openAddTaskPopup()">Add task</button>
         </div>
         @if (tasksLoading) {
           <p class="muted">Loading tasks…</p>
-        } @else if (!tasks.length) {
-          <p class="muted">No tasks yet. Use Add task to create one.</p>
+        } @else if (!tasksThisMonth.length) {
+          <p class="muted">{{ tasks.length ? 'No tasks this month.' : 'No tasks yet. Use Add task to create one.' }}</p>
         } @else {
           <div class="table-wrap">
             <table>
@@ -79,7 +111,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (t of tasks; track t.id) {
+                @for (t of tasksThisMonth; track t.id) {
                   <tr>
                     <td>{{ t.taskDate }}</td>
                     <td>{{ t.timeHours }}</td>

@@ -110,6 +110,17 @@ pub fn create_project(conn: &Connection, name: &str) -> Result<i64, rusqlite::Er
     Ok(conn.last_insert_rowid())
 }
 
+pub fn rename_project(conn: &Connection, id: i64, name: &str) -> Result<(), rusqlite::Error> {
+    let n = conn.execute(
+        "UPDATE projects SET name = ?1 WHERE id = ?2",
+        params![name.trim(), id],
+    )?;
+    if n == 0 {
+        return Err(rusqlite::Error::QueryReturnedNoRows);
+    }
+    Ok(())
+}
+
 pub fn delete_project(conn: &Connection, id: i64) -> Result<(), rusqlite::Error> {
     conn.execute("DELETE FROM projects WHERE id = ?1", params![id])?;
     Ok(())
