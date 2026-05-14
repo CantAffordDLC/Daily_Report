@@ -16,6 +16,7 @@
       [(ngModel)]="searchQuery"
       (keyup.enter)="visibleProjects.length === 0 && normalizedQuery ? createProject() : null"
     />
+    <button type="button" class="btn primary" (click)="promptCreateProject()">+ New project</button>
   </div>
 
   @if (loading) {

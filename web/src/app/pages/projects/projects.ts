@@ -83,6 +83,16 @@ export class ProjectsPage implements OnInit {
     );
   }
 
+  promptCreateProject(): void {
+    const prefill = this.searchQuery.trim();
+    const name = prompt('New project name:', prefill) ?? '';
+    if (!name.trim()) return;
+    this.searchQuery = '';
+    void this.tauri.createProject(name.trim())
+      .then(() => this.refresh())
+      .catch((e) => alert(String(e)));
+  }
+
   async createProject(): Promise<void> {
     const name = this.searchQuery.trim();
     if (!name) return;
