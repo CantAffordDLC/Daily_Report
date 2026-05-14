@@ -192,3 +192,13 @@ td.num {
   min-width: 0;
   line-height: 1.35;
 }
+
+.details-cell {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.btn-details {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+}

@@ -6,6 +6,7 @@ import {
   ProjectRow,
   TaskRow,
 } from '../../core/tauri.service';
+import { TaskDetailsDialogComponent } from './task-details-dialog/task-details-dialog';
 
 interface ProjectTasks {
   project: ProjectRow;
@@ -15,7 +16,7 @@ interface ProjectTasks {
 @Component({
   selector: 'app-hours',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, TaskDetailsDialogComponent],
   templateUrl: './hours.html',
   styleUrl: './hours.css',
 })
@@ -28,12 +29,11 @@ export class HoursPage implements OnInit {
   error: string | null = null;
 
   searchQuery = '';
-  /** Project ids that are collapsed (hidden task lists). */
   private collapsedProjectIds = new Set<number>();
-  /** Draft "add hours" values keyed by task id (applied together via the bottom button). */
   hourDraft: Record<number, number | null> = {};
-  /** True while batch-saving pending hour updates. */
   savingAll = false;
+
+  detailTask: TaskRow | null = null;
 
   ngOnInit(): void {
     void this.refresh();
@@ -82,7 +82,6 @@ export class HoursPage implements OnInit {
     return hay.includes(q);
   }
 
-  /** Groups with tasks filtered by search; projects with no matches are omitted when searching. */
   visibleGroups(): ProjectTasks[] {
     const q = this.normalizedSearch();
     const out: ProjectTasks[] = [];
@@ -108,9 +107,8 @@ export class HoursPage implements OnInit {
     return this.collapsedProjectIds.has(projectId);
   }
 
-  /** Collapsed: points right; expanded: points down. */
   projectChevron(projectId: number): string {
-    return this.isCollapsed(projectId) ? '\u25B8' : '\u25BE';
+    return this.isCollapsed(projectId) ? '▸' : '▾';
   }
 
   toggleProject(projectId: number): void {
@@ -131,6 +129,16 @@ export class HoursPage implements OnInit {
     for (const g of this.groups) {
       this.collapsedProjectIds.add(g.project.id);
     }
+    this.cdr.detectChanges();
+  }
+
+  openDetails(task: TaskRow): void {
+    this.detailTask = task;
+    this.cdr.detectChanges();
+  }
+
+  closeDetails(): void {
+    this.detailTask = null;
     this.cdr.detectChanges();
   }
 
@@ -160,9 +168,7 @@ export class HoursPage implements OnInit {
     }
 
     if (invalid.length) {
-      alert(
-        'Fix these fields before applying:\n\n' + invalid.join('\n'),
-      );
+      alert('Fix these fields before applying:\n\n' + invalid.join('\n'));
       return;
     }
     if (!pending.length) {
@@ -174,15 +180,7 @@ export class HoursPage implements OnInit {
     this.cdr.detectChanges();
     try {
       for (const { task, delta } of pending) {
-        await this.tauri.updateTask({
-          id: task.id,
-          projectId: task.projectId,
-          taskDate: task.taskDate,
-          dayType: task.dayType,
-          description: task.description,
-          timeHours: task.timeHours + delta,
-          obsidianInput: task.obsidianUri,
-        });
+        await this.tauri.addTaskHours(task.id, delta);
       }
       for (const { task } of pending) {
         this.hourDraft[task.id] = null;

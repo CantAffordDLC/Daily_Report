@@ -17,6 +17,13 @@ export interface TaskRow {
   obsidianUri: string | null;
 }
 
+export interface TaskHistoryRow {
+  id: number;
+  taskId: number;
+  changedAt: string;
+  delta: number;
+}
+
 export interface MonthlyHourRow {
   yearMonth: string;
   projectId: number;
@@ -123,6 +130,14 @@ export class TauriService {
 
   listAllTasks(): Promise<TaskRow[]> {
     return this.invokeCmd<TaskRow[]>('list_all_tasks');
+  }
+
+  addTaskHours(taskId: number, delta: number): Promise<void> {
+    return this.invokeCmd('add_task_hours', { taskId, delta });
+  }
+
+  listTaskHistory(taskId: number): Promise<TaskHistoryRow[]> {
+    return this.invokeCmd<TaskHistoryRow[]>('list_task_history', { taskId });
   }
 
   listTasksByProject(projectId: number): Promise<TaskRow[]> {

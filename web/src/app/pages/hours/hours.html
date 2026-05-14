@@ -57,6 +57,7 @@
                   <th>Hours</th>
                   <th>Task</th>
                   <th>Hours to add</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -75,6 +76,9 @@
                         [(ngModel)]="hourDraft[t.id]"
                         [disabled]="savingAll"
                       />
+                    </td>
+                    <td class="details-cell">
+                      <button type="button" class="btn ghost btn-details" (click)="openDetails(t)">Details</button>
                     </td>
                   </tr>
                 }
@@ -106,3 +110,10 @@
     </footer>
   }
 </div>
+
+<app-task-details-dialog
+  [task]="detailTask"
+  (closed)="closeDetails()"
+  (saved)="closeDetails(); refresh()"
+  (deleted)="closeDetails(); refresh()"
+/>

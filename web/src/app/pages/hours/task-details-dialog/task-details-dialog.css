@@ -1,0 +1,204 @@
+.details-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: rgb(15 23 42 / 0.5);
+}
+
+.details-dialog {
+  position: fixed;
+  z-index: 1101;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(94vw, 760px);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  overflow: hidden;
+}
+
+.details-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.details-title {
+  margin: 0;
+  font-size: 1.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.details-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+.history-panel,
+.edit-panel {
+  padding: 1rem 1.25rem 1.5rem;
+  overflow-y: auto;
+}
+
+.history-panel {
+  border-right: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.panel-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.history-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.history-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.delta {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.delta.positive { color: #0f766e; }
+.delta.negative { color: #b91c1c; }
+
+.history-date {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.muted {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.field.narrow {
+  max-width: 7rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.row .field {
+  flex: 1;
+  min-width: 6rem;
+}
+
+.input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  width: 100%;
+}
+
+.input.mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+
+.obsidian-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: -0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.btn {
+  border-radius: 8px;
+  padding: 0.45rem 0.75rem;
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn.primary {
+  background: #0f766e;
+  color: #fff;
+}
+
+.btn.secondary {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: #475569;
+}
+
+.btn.danger {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+@media (max-width: 540px) {
+  .details-body {
+    grid-template-columns: 1fr;
+  }
+  .history-panel {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+    max-height: 200px;
+  }
+}

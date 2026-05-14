@@ -91,6 +91,24 @@ fn list_all_tasks(state: State<AppState>) -> Result<Vec<db::TaskRow>, String> {
 }
 
 #[tauri::command]
+fn add_task_hours(state: State<AppState>, task_id: i64, delta: f64) -> Result<(), String> {
+    if !delta.is_finite() || delta == 0.0 {
+        return Err("Delta must be a non-zero finite number".into());
+    }
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    db::add_task_hours(&conn, task_id, delta).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn list_task_history(
+    state: State<AppState>,
+    task_id: i64,
+) -> Result<Vec<db::TaskHistoryRow>, String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    db::list_task_history(&conn, task_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn list_tasks_by_date(
     state: State<AppState>,
     project_id: i64,
@@ -341,6 +359,8 @@ fn main() {
             rename_project,
             delete_project,
             list_all_tasks,
+            add_task_hours,
+            list_task_history,
             list_tasks_by_date,
             list_tasks_by_project,
             create_task,

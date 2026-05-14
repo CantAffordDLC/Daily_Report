@@ -32,6 +32,13 @@ pub fn open_and_init(db_path: &Path) -> Result<Connection, rusqlite::Error> {
         );
         CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id);
         CREATE INDEX IF NOT EXISTS idx_tasks_project_date ON tasks(project_id, task_date);
+        CREATE TABLE IF NOT EXISTS task_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+            changed_at TEXT NOT NULL,
+            delta REAL NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_task_history_task_id ON task_history(task_id);
         ",
     )?;
     migrate_obsidian_column(&conn)?;
@@ -71,6 +78,15 @@ pub struct TaskRow {
     pub description: String,
     pub time_hours: f64,
     pub obsidian_uri: Option<String>,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TaskHistoryRow {
+    pub id: i64,
+    pub task_id: i64,
+    pub changed_at: String,
+    pub delta: f64,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -155,6 +171,41 @@ pub fn list_all_tasks(conn: &Connection) -> Result<Vec<TaskRow>, rusqlite::Error
          FROM tasks ORDER BY task_date DESC, id DESC",
     )?;
     map_task_rows(&mut stmt, [])
+}
+
+pub fn add_task_hours(conn: &Connection, task_id: i64, delta: f64) -> Result<(), rusqlite::Error> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let n = conn.execute(
+        "UPDATE tasks SET time_hours = time_hours + ?1 WHERE id = ?2",
+        params![delta, task_id],
+    )?;
+    if n == 0 {
+        return Err(rusqlite::Error::QueryReturnedNoRows);
+    }
+    conn.execute(
+        "INSERT INTO task_history (task_id, changed_at, delta) VALUES (?1, ?2, ?3)",
+        params![task_id, now, delta],
+    )?;
+    Ok(())
+}
+
+pub fn list_task_history(
+    conn: &Connection,
+    task_id: i64,
+) -> Result<Vec<TaskHistoryRow>, rusqlite::Error> {
+    let mut stmt = conn.prepare(
+        "SELECT id, task_id, changed_at, delta FROM task_history
+         WHERE task_id = ?1 ORDER BY changed_at DESC",
+    )?;
+    let iter = stmt.query_map(params![task_id], |r| {
+        Ok(TaskHistoryRow {
+            id: r.get(0)?,
+            task_id: r.get(1)?,
+            changed_at: r.get(2)?,
+            delta: r.get(3)?,
+        })
+    })?;
+    iter.collect()
 }
 
 fn map_task_rows(

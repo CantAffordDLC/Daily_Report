@@ -1,0 +1,75 @@
+@if (open && task) {
+  <div class="details-backdrop" (click)="backdropClick($event)" role="presentation"></div>
+  <div class="details-dialog" role="dialog" aria-modal="true">
+    <div class="details-header">
+      <h2 class="details-title">{{ task.description }}</h2>
+      <button type="button" class="btn ghost" (click)="dismiss()" [disabled]="saving">Close</button>
+    </div>
+
+    <div class="details-body">
+      <section class="history-panel">
+        <h3 class="panel-title">History</h3>
+        @if (historyLoading) {
+          <p class="muted">Loading…</p>
+        } @else if (!history.length) {
+          <p class="muted">No history yet.</p>
+        } @else {
+          <ul class="history-list">
+            @for (h of history; track h.id) {
+              <li class="history-row">
+                <span class="delta" [class.positive]="h.delta > 0" [class.negative]="h.delta < 0">
+                  {{ formatDelta(h.delta) }}
+                </span>
+                <span class="history-date muted">{{ formatDate(h.changedAt) }}</span>
+              </li>
+            }
+          </ul>
+        }
+      </section>
+
+      <section class="edit-panel">
+        <h3 class="panel-title">Edit</h3>
+
+        <label class="field">
+          <span class="label">Name</span>
+          <input type="text" class="input" [(ngModel)]="taskName" [disabled]="saving" />
+        </label>
+
+        <div class="row">
+          <label class="field">
+            <span class="label">Date</span>
+            <input type="date" class="input" [(ngModel)]="taskDate" [disabled]="saving" />
+          </label>
+          <label class="field narrow">
+            <span class="label">Hours</span>
+            <input type="number" class="input" step="0.25" min="0" [(ngModel)]="timeHours" [disabled]="saving" />
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="label">Obsidian note</span>
+          <input
+            type="text"
+            class="input mono"
+            [(ngModel)]="obsidianDraft"
+            placeholder="Path or obsidian:// URL"
+            [disabled]="saving"
+          />
+        </label>
+        <div class="obsidian-actions">
+          <button type="button" class="btn secondary" (click)="pickNote()" [disabled]="saving">Choose .md…</button>
+          @if (obsidianDraft.trim()) {
+            <button type="button" class="btn ghost" (click)="clearNote()" [disabled]="saving">Clear</button>
+          }
+        </div>
+
+        <div class="edit-actions">
+          <button type="button" class="btn primary" (click)="save()" [disabled]="saving">
+            {{ saving ? 'Saving…' : 'Save' }}
+          </button>
+          <button type="button" class="btn danger" (click)="deleteTask()" [disabled]="saving">Delete task</button>
+        </div>
+      </section>
+    </div>
+  </div>
+}
