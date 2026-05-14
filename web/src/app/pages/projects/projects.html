@@ -10,23 +10,24 @@
 
   <div class="toolbar">
     <input
-      type="text"
-      class="input"
-      placeholder="New project name"
-      [(ngModel)]="newProjectName"
-      (keyup.enter)="createProject()"
+      type="search"
+      class="input search-grow"
+      [placeholder]="normalizedQuery ? 'Search projects…' : 'Search or create a project…'"
+      [(ngModel)]="searchQuery"
+      (keyup.enter)="visibleProjects.length === 0 && normalizedQuery ? createProject() : null"
     />
-    <button type="button" class="btn primary" (click)="createProject()" [disabled]="loading">
-      Create project
-    </button>
   </div>
 
-  @if (loading && !projects.length) {
+  @if (loading) {
     <p class="muted">Loading…</p>
   }
 
+  @if (!loading && !normalizedQuery) {
+    <p class="muted small month-hint">Showing projects with hours in {{ currentYearMonth }}</p>
+  }
+
   <ul class="project-grid">
-    @for (p of projects; track p.id) {
+    @for (p of visibleProjects; track p.id) {
       <li class="project-card" (click)="openProject(p)" role="button" tabindex="0" (keyup.enter)="openProject(p)">
         <div class="project-card-body">
           <h2>{{ p.name }}</h2>
@@ -44,8 +45,21 @@
     }
   </ul>
 
-  @if (!loading && !projects.length) {
-    <p class="muted">No projects yet. Create one above.</p>
+  @if (!loading && normalizedQuery && visibleProjects.length === 0) {
+    <div class="no-results">
+      <p class="muted">No projects match "<strong>{{ searchQuery.trim() }}</strong>".</p>
+      <button type="button" class="btn primary" (click)="createProject()">
+        Create project "{{ searchQuery.trim() }}"
+      </button>
+    </div>
+  }
+
+  @if (!loading && !normalizedQuery && visibleProjects.length === 0 && allProjects.length > 0) {
+    <p class="muted">No hours logged this month yet. Search above to find a project.</p>
+  }
+
+  @if (!loading && allProjects.length === 0) {
+    <p class="muted">No projects yet. Type a name above and press Enter to create one.</p>
   }
 </div>
 

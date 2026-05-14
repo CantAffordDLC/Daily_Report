@@ -19,37 +19,47 @@ export class ProjectsPage implements OnInit {
   private readonly tauri = inject(TauriService);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  projects: ProjectRow[] = [];
-  newProjectName = '';
+  allProjects: ProjectRow[] = [];
+  /** Project IDs that have at least one task with hours this month. */
+  monthlyProjectIds = new Set<number>();
+  searchQuery = '';
   loading = false;
   error: string | null = null;
-
-  renamingProjectId: number | null = null;
-  renameDraft = '';
 
   readonly currentYearMonth: string = (() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
   })();
 
+  renamingProjectId: number | null = null;
+  renameDraft = '';
+
   modalOpen = false;
   activeProject: ProjectRow | null = null;
   tasks: TaskRow[] = [];
   tasksLoading = false;
 
-  /** Second-level popup for create / edit task (includes Name field). */
   taskFormOpen = false;
   editingTaskForDialog: TaskRow | null = null;
 
   ngOnInit(): void {
-    void this.refreshProjects();
+    void this.refresh();
   }
 
-  async refreshProjects(): Promise<void> {
+  async refresh(): Promise<void> {
     this.loading = true;
     this.error = null;
     try {
-      this.projects = await this.tauri.listProjects();
+      const [projects, logs] = await Promise.all([
+        this.tauri.listProjects(),
+        this.tauri.getMonthlyHourLogs(new Date().getFullYear()),
+      ]);
+      this.allProjects = projects;
+      this.monthlyProjectIds = new Set(
+        logs
+          .filter((r) => r.yearMonth === this.currentYearMonth)
+          .map((r) => r.projectId),
+      );
     } catch (e) {
       this.error = String(e);
     } finally {
@@ -58,13 +68,28 @@ export class ProjectsPage implements OnInit {
     }
   }
 
+  get normalizedQuery(): string {
+    return this.searchQuery.trim().toLowerCase();
+  }
+
+  /** Projects shown in the grid: this month's projects when idle, search results when typing. */
+  get visibleProjects(): ProjectRow[] {
+    const q = this.normalizedQuery;
+    if (!q) {
+      return this.allProjects.filter((p) => this.monthlyProjectIds.has(p.id));
+    }
+    return this.allProjects.filter((p) =>
+      p.name.toLowerCase().includes(q),
+    );
+  }
+
   async createProject(): Promise<void> {
-    const name = this.newProjectName.trim();
+    const name = this.searchQuery.trim();
     if (!name) return;
     try {
       await this.tauri.createProject(name);
-      this.newProjectName = '';
-      await this.refreshProjects();
+      this.searchQuery = '';
+      await this.refresh();
     } catch (e) {
       alert(String(e));
     }
@@ -94,7 +119,7 @@ export class ProjectsPage implements OnInit {
       if (this.activeProject?.id === p.id) {
         this.activeProject = { ...this.activeProject, name };
       }
-      await this.refreshProjects();
+      await this.refresh();
     } catch (e) {
       alert(String(e));
     } finally {
@@ -110,7 +135,7 @@ export class ProjectsPage implements OnInit {
     try {
       await this.tauri.deleteProject(p.id);
       if (this.activeProject?.id === p.id) this.closeModal();
-      await this.refreshProjects();
+      await this.refresh();
     } catch (e) {
       alert(String(e));
     }
