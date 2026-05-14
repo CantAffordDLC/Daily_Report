@@ -27,13 +27,26 @@
       </div>
     </label>
 
+    <label class="block">
+      Projects root folder
+      <div class="path-row">
+        <input
+          type="text"
+          class="input wide"
+          [(ngModel)]="obsidianProjectsFolder"
+          placeholder="Folder where project subfolders will be created"
+        />
+        <button type="button" class="btn secondary" (click)="browseProjectsFolder()">Browse…</button>
+      </div>
+    </label>
+
     <div class="block toggle-block">
       <label class="check">
         <input type="checkbox" [(ngModel)]="obsidianAutoCreate" />
         Auto-create folders &amp; notes
       </label>
       <p class="hint">
-        When enabled: creating a <strong>project</strong> makes a subfolder inside <code>Tasks/</code> in your vault.
+        When enabled: creating a <strong>project</strong> makes a subfolder inside the projects root folder above.
         Creating a <strong>task</strong> creates a <code>.md</code> note in that project folder and links it automatically.
       </p>
     </div>

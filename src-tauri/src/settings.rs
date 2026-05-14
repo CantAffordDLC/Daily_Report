@@ -11,6 +11,8 @@ pub struct AppSettings {
     #[serde(default)]
     pub obsidian_vault_path: String,
     #[serde(default)]
+    pub obsidian_projects_folder: String,
+    #[serde(default)]
     pub obsidian_auto_create: bool,
     #[serde(default)]
     pub reminder_enabled: bool,
@@ -33,6 +35,7 @@ impl Default for AppSettings {
             export_path,
             default_obsidian_vault: String::new(),
             obsidian_vault_path: String::new(),
+            obsidian_projects_folder: String::new(),
             obsidian_auto_create: false,
             reminder_enabled: false,
             reminder_cron: default_reminder_cron(),

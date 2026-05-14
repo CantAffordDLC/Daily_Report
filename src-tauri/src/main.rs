@@ -85,7 +85,12 @@ fn create_project(state: State<AppState>, name: String) -> Result<i64, String> {
     let conn = state.db.lock().map_err(|e| e.to_string())?;
     let id = db::create_project(&conn, &name).map_err(|e| e.to_string())?;
     if s.obsidian_auto_create && !s.obsidian_vault_path.trim().is_empty() {
-        let folder = Path::new(s.obsidian_vault_path.trim()).join("Tasks").join(sanitize_filename(name.trim()));
+        let root = if !s.obsidian_projects_folder.trim().is_empty() {
+            PathBuf::from(s.obsidian_projects_folder.trim())
+        } else {
+            Path::new(s.obsidian_vault_path.trim()).join("Tasks")
+        };
+        let folder = root.join(sanitize_filename(name.trim()));
         let _ = fs::create_dir_all(&folder);
     }
     Ok(id)
@@ -175,8 +180,12 @@ fn create_task(
     let effective_obs: Option<String> = if auto_obs {
         if let Ok(projects) = db::list_projects(&conn) {
             if let Some(project) = projects.iter().find(|p| p.id == project_id) {
-                let vault = Path::new(s.obsidian_vault_path.trim());
-                let folder = vault.join("Tasks").join(sanitize_filename(&project.name));
+                let root = if !s.obsidian_projects_folder.trim().is_empty() {
+                    PathBuf::from(s.obsidian_projects_folder.trim())
+                } else {
+                    Path::new(s.obsidian_vault_path.trim()).join("Tasks")
+                };
+                let folder = root.join(sanitize_filename(&project.name));
                 let _ = fs::create_dir_all(&folder);
                 let note_path = folder.join(format!("{}.md", sanitize_filename(description.trim())));
                 if !note_path.exists() {

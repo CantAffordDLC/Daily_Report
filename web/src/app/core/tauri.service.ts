@@ -35,6 +35,7 @@ export interface AppSettings {
   exportPath: string;
   defaultObsidianVault: string;
   obsidianVaultPath: string;
+  obsidianProjectsFolder: string;
   obsidianAutoCreate: boolean;
   /** When true, the app shows a popup on each cron tick (local time). */
   reminderEnabled: boolean;

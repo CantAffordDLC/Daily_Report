@@ -17,6 +17,7 @@ export class SettingsPage implements OnInit {
   exportPath = '';
   defaultObsidianVault = '';
   obsidianVaultPath = '';
+  obsidianProjectsFolder = '';
   obsidianAutoCreate = false;
   reminderEnabled = false;
   reminderCron = '0 0 9,12,17 * * *';
@@ -32,6 +33,7 @@ export class SettingsPage implements OnInit {
       this.exportPath = s.exportPath;
       this.defaultObsidianVault = s.defaultObsidianVault ?? '';
       this.obsidianVaultPath = s.obsidianVaultPath ?? '';
+      this.obsidianProjectsFolder = s.obsidianProjectsFolder ?? '';
       this.obsidianAutoCreate = s.obsidianAutoCreate ?? false;
       this.reminderEnabled = s.reminderEnabled ?? false;
       this.reminderCron = s.reminderCron?.trim() || '0 0 9,12,17 * * *';
@@ -45,13 +47,15 @@ export class SettingsPage implements OnInit {
   async browseVaultPath(): Promise<void> {
     try {
       const path = await this.tauri.pickFolder();
-      if (path) {
-        this.obsidianVaultPath = path;
-        this.cdr.detectChanges();
-      }
-    } catch (e) {
-      alert(String(e));
-    }
+      if (path) { this.obsidianVaultPath = path; this.cdr.detectChanges(); }
+    } catch (e) { alert(String(e)); }
+  }
+
+  async browseProjectsFolder(): Promise<void> {
+    try {
+      const path = await this.tauri.pickFolder();
+      if (path) { this.obsidianProjectsFolder = path; this.cdr.detectChanges(); }
+    } catch (e) { alert(String(e)); }
   }
 
   async save(): Promise<void> {
@@ -66,6 +70,7 @@ export class SettingsPage implements OnInit {
         exportPath,
         defaultObsidianVault: this.defaultObsidianVault.trim(),
         obsidianVaultPath: this.obsidianVaultPath.trim(),
+        obsidianProjectsFolder: this.obsidianProjectsFolder.trim(),
         obsidianAutoCreate: this.obsidianAutoCreate,
         reminderEnabled: this.reminderEnabled,
         reminderCron: this.reminderCron.trim() || '0 0 9,12,17 * * *',
