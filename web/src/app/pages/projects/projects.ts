@@ -70,8 +70,8 @@ export class ProjectsPage implements OnInit {
     }
   }
 
-  startRename(p: ProjectRow, ev: Event): void {
-    ev.stopPropagation();
+  startRename(p: ProjectRow, ev?: Event): void {
+    ev?.stopPropagation();
     this.renamingProjectId = p.id;
     this.renameDraft = p.name;
     this.cdr.detectChanges();

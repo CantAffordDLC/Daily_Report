@@ -131,19 +131,30 @@ label.block.flex-1 {
   font-size: 1.1rem;
 }
 
-.card-actions {
+.modal-title-row {
   display: flex;
-  gap: 0.35rem;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
-.card-action {
-  font-size: 0.8rem;
-  padding: 0.25rem 0.5rem;
+.modal-title-row h2 {
+  margin: 0;
 }
 
-.project-card.renaming {
-  cursor: default;
+.btn-pencil {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.15rem 0.3rem;
+  border-radius: 6px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.btn-pencil:hover {
+  opacity: 1;
 }
 
 .rename-row {
@@ -151,12 +162,13 @@ label.block.flex-1 {
   gap: 0.5rem;
   align-items: center;
   flex-wrap: wrap;
-  width: 100%;
+  flex: 1;
+  min-width: 0;
 }
 
 .rename-input {
   flex: 1;
-  min-width: 0;
+  min-width: 8rem;
 }
 
 .modal-backdrop {

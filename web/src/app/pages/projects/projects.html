@@ -27,51 +27,19 @@
 
   <ul class="project-grid">
     @for (p of projects; track p.id) {
-      <li
-        class="project-card"
-        [class.renaming]="renamingProjectId === p.id"
-        (click)="renamingProjectId !== p.id && openProject(p)"
-        role="button"
-        tabindex="0"
-        (keyup.enter)="renamingProjectId !== p.id && openProject(p)"
-      >
-        @if (renamingProjectId === p.id) {
-          <div class="rename-row" (click)="$event.stopPropagation()">
-            <input
-              type="text"
-              class="input rename-input"
-              [(ngModel)]="renameDraft"
-              (keyup.enter)="commitRename(p)"
-              (keyup.escape)="cancelRename()"
-              autofocus
-            />
-            <button type="button" class="btn primary" (click)="commitRename(p)">Save</button>
-            <button type="button" class="btn ghost" (click)="cancelRename()">Cancel</button>
-          </div>
-        } @else {
-          <div class="project-card-body">
-            <h2>{{ p.name }}</h2>
-            <span class="muted small">ID {{ p.id }}</span>
-          </div>
-          <div class="card-actions">
-            <button
-              type="button"
-              class="btn ghost card-action"
-              (click)="startRename(p, $event)"
-              title="Rename project"
-            >
-              Rename
-            </button>
-            <button
-              type="button"
-              class="btn danger ghost card-action"
-              (click)="deleteProject(p, $event)"
-              title="Delete project"
-            >
-              Delete
-            </button>
-          </div>
-        }
+      <li class="project-card" (click)="openProject(p)" role="button" tabindex="0" (keyup.enter)="openProject(p)">
+        <div class="project-card-body">
+          <h2>{{ p.name }}</h2>
+          <span class="muted small">ID {{ p.id }}</span>
+        </div>
+        <button
+          type="button"
+          class="btn danger ghost card-delete"
+          (click)="deleteProject(p, $event)"
+          title="Delete project"
+        >
+          Delete
+        </button>
       </li>
     }
   </ul>
@@ -85,7 +53,30 @@
   <div class="modal-backdrop" (click)="closeModal()"></div>
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal-header">
-      <h2 id="modal-title">{{ activeProject.name }}</h2>
+      @if (renamingProjectId === activeProject.id) {
+        <div class="rename-row">
+          <input
+            type="text"
+            class="input rename-input"
+            [(ngModel)]="renameDraft"
+            (keyup.enter)="commitRename(activeProject)"
+            (keyup.escape)="cancelRename()"
+            autofocus
+          />
+          <button type="button" class="btn primary" (click)="commitRename(activeProject)">Save</button>
+          <button type="button" class="btn ghost" (click)="cancelRename()">Cancel</button>
+        </div>
+      } @else {
+        <div class="modal-title-row">
+          <h2 id="modal-title">{{ activeProject.name }}</h2>
+          <button
+            type="button"
+            class="btn-pencil"
+            (click)="startRename(activeProject, $event)"
+            title="Rename project"
+          >✏️</button>
+        </div>
+      }
       <button type="button" class="btn ghost" (click)="closeModal()">Close</button>
     </div>
 
