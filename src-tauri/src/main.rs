@@ -4,9 +4,9 @@
 mod db;
 mod settings;
 
-use chrono::Local;
+use chrono::{Datelike, Local};
 use cron::Schedule;
-use db::{MonthlyHourRow, ProjectRow, TaskRow};
+use db::{HourLogRow, MonthlyHourRow, ProjectRow, TaskRow};
 use rust_xlsxwriter::{Format, Workbook};
 use settings::AppSettings;
 use std::fs;
@@ -14,7 +14,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Mutex;
 use tauri::api::dialog::blocking::FileDialogBuilder;
-use tauri::{Manager, State};
+use tauri::{CustomMenuItem, Manager, State, SystemTray, SystemTrayEvent, SystemTrayMenu};
 
 struct AppState {
     db: Mutex<rusqlite::Connection>,
@@ -40,7 +40,7 @@ fn get_settings(state: State<AppState>) -> Result<AppSettings, String> {
 }
 
 #[tauri::command]
-fn set_settings(state: State<AppState>, settings: AppSettings) -> Result<(), String> {
+fn set_settings(state: State<AppState>, mut settings: AppSettings) -> Result<(), String> {
     if settings.export_path.trim().is_empty() {
         return Err("exportPath cannot be empty".into());
     }
@@ -51,6 +51,9 @@ fn set_settings(state: State<AppState>, settings: AppSettings) -> Result<(), Str
         }
         Schedule::from_str(expr).map_err(|e| format!("Invalid reminderCron: {}", e))?;
     }
+    // Preserve internal fields that the UI doesn't send
+    let existing = settings::load(&state.data_dir);
+    settings.last_backup_date = existing.last_backup_date;
     settings::save(&state.data_dir, &settings)
 }
 
@@ -157,6 +160,38 @@ fn list_tasks_by_project(state: State<AppState>, project_id: i64) -> Result<Vec<
 }
 
 #[tauri::command]
+fn find_obsidian_note(
+    state: State<AppState>,
+    project_id: i64,
+    task_name: String,
+) -> Result<Option<String>, String> {
+    let s = settings::load(&state.data_dir);
+    if s.obsidian_vault_path.trim().is_empty() {
+        return Ok(None);
+    }
+    let root = if !s.obsidian_projects_folder.trim().is_empty() {
+        PathBuf::from(s.obsidian_projects_folder.trim())
+    } else {
+        Path::new(s.obsidian_vault_path.trim()).join("Tasks")
+    };
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    let projects = db::list_projects(&conn).map_err(|e| e.to_string())?;
+    let Some(project) = projects.iter().find(|p| p.id == project_id) else {
+        return Ok(None);
+    };
+    let note_path = root
+        .join(sanitize_filename(&project.name))
+        .join(format!("{}.md", sanitize_filename(task_name.trim())));
+    if !note_path.exists() {
+        return Ok(None);
+    }
+    let abs = fs::canonicalize(&note_path).unwrap_or(note_path);
+    let abs_str = abs.to_string_lossy();
+    let clean = abs_str.strip_prefix(r"\\?\").unwrap_or(&abs_str);
+    Ok(Some(format!("obsidian://open?path={}", urlencoding::encode(clean))))
+}
+
+#[tauri::command]
 fn create_task(
     state: State<AppState>,
     project_id: i64,
@@ -165,6 +200,7 @@ fn create_task(
     description: String,
     time_hours: f64,
     obsidian_input: Option<String>,
+    create_note: Option<bool>,
 ) -> Result<i64, String> {
     if description.trim().is_empty() {
         return Err("Description is required".into());
@@ -173,7 +209,7 @@ fn create_task(
     let conn = state.db.lock().map_err(|e| e.to_string())?;
 
     let user_provided_obs = obsidian_input.as_deref().map(|v| v.trim()).unwrap_or("").is_empty();
-    let auto_obs = s.obsidian_auto_create
+    let auto_obs = (s.obsidian_auto_create || create_note.unwrap_or(false))
         && !s.obsidian_vault_path.trim().is_empty()
         && user_provided_obs;
 
@@ -377,6 +413,120 @@ fn pick_folder() -> Result<Option<String>, String> {
     Ok(path.map(|p| p.to_string_lossy().into_owned()))
 }
 
+#[tauri::command]
+fn add_hour_log(
+    state: State<AppState>,
+    task_id: i64,
+    project_id: i64,
+    logged_date: String,
+    hours: f64,
+) -> Result<(), String> {
+    if !hours.is_finite() || hours <= 0.0 {
+        return Err("Hours must be a positive number".into());
+    }
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    db::add_hour_log(&conn, task_id, project_id, &logged_date, hours).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn list_hour_logs_for_task(
+    state: State<AppState>,
+    task_id: i64,
+) -> Result<Vec<HourLogRow>, String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    db::list_hour_logs_for_task(&conn, task_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_hour_log(state: State<AppState>, id: i64) -> Result<(), String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    db::delete_hour_log(&conn, id).map_err(|e| e.to_string())
+}
+
+// ── Backup ────────────────────────────────────────────────────────────────────
+
+fn is_backup_due(frequency: &str, last_date: &str, today: &str) -> bool {
+    use chrono::{Duration, NaiveDate};
+    if last_date.trim().is_empty() {
+        return true;
+    }
+    let last = match NaiveDate::parse_from_str(last_date.trim(), "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => return true,
+    };
+    let now = match NaiveDate::parse_from_str(today.trim(), "%Y-%m-%d") {
+        Ok(d) => d,
+        Err(_) => return false,
+    };
+    match frequency {
+        "daily" => now > last,
+        "weekly" => now >= last + Duration::days(7),
+        "monthly" => {
+            now.year() > last.year()
+                || (now.year() == last.year() && now.month() > last.month())
+        }
+        "annual" => now.year() > last.year(),
+        _ => false,
+    }
+}
+
+fn run_startup_backup(conn: &rusqlite::Connection, data_dir: &Path) {
+    let mut s = settings::load(data_dir);
+    if !s.backup_enabled || s.backup_path.trim().is_empty() {
+        return;
+    }
+    let today = Local::now().format("%Y-%m-%d").to_string();
+    if !is_backup_due(&s.backup_frequency, &s.last_backup_date, &today) {
+        return;
+    }
+    let backup_dir = PathBuf::from(s.backup_path.trim());
+    if fs::create_dir_all(&backup_dir).is_err() {
+        return;
+    }
+    let filename = format!("daily_report_backup_{}.db", today);
+    let dest = backup_dir.join(&filename);
+    let dest_str = dest.to_string_lossy().replace('\'', "''");
+    if conn
+        .execute_batch(&format!("VACUUM INTO '{}'", dest_str))
+        .is_ok()
+    {
+        s.last_backup_date = today;
+        let _ = settings::save(data_dir, &s);
+    }
+}
+
+#[tauri::command]
+fn create_backup(state: State<AppState>) -> Result<String, String> {
+    let s = settings::load(&state.data_dir);
+    if s.backup_path.trim().is_empty() {
+        return Err("Backup folder is not configured".into());
+    }
+    let backup_dir = PathBuf::from(s.backup_path.trim());
+    fs::create_dir_all(&backup_dir).map_err(|e| e.to_string())?;
+    let today = Local::now().format("%Y-%m-%d").to_string();
+    let timestamp = Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
+    let filename = format!("daily_report_backup_{}.db", timestamp);
+    let dest = backup_dir.join(&filename);
+    let dest_str = dest.to_string_lossy().replace('\'', "''");
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    conn.execute_batch(&format!("VACUUM INTO '{}'", dest_str))
+        .map_err(|e| e.to_string())?;
+    // Update last_backup_date
+    let mut updated = s.clone();
+    updated.last_backup_date = today;
+    let _ = settings::save(&state.data_dir, &updated);
+    Ok(dest.to_string_lossy().into_owned())
+}
+
+// ── System tray ───────────────────────────────────────────────────────────────
+
+fn build_system_tray() -> SystemTray {
+    let show = CustomMenuItem::new("show".to_string(), "Show");
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+    let menu = SystemTrayMenu::new().add_item(show).add_item(quit);
+    SystemTray::new().with_menu(menu)
+}
+
 fn spawn_reminder_thread(app_handle: tauri::AppHandle, data_dir: PathBuf) {
     std::thread::spawn(move || loop {
         let settings = settings::load(&data_dir);
@@ -413,12 +563,41 @@ fn spawn_reminder_thread(app_handle: tauri::AppHandle, data_dir: PathBuf) {
 
 fn main() {
     tauri::Builder::default()
+        .system_tray(build_system_tray())
+        .on_system_tray_event(|app, event| match event {
+            SystemTrayEvent::LeftClick { .. } => {
+                if let Some(window) = app.get_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+                "show" => {
+                    if let Some(window) = app.get_window("main") {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                }
+                "quit" => {
+                    std::process::exit(0);
+                }
+                _ => {}
+            },
+            _ => {}
+        })
+        .on_window_event(|event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event.event() {
+                event.window().hide().unwrap();
+                api.prevent_close();
+            }
+        })
         .setup(|app| {
             let handle = app.handle();
             let data_dir = data_dir_for(&handle)?;
             fs::create_dir_all(&data_dir).map_err(|e| e.to_string())?;
             let db_path = data_dir.join("daily_report.db");
             let conn = db::open_and_init(&db_path).map_err(|e| e.to_string())?;
+            run_startup_backup(&conn, &data_dir);
             let data_dir_bg = data_dir.clone();
             spawn_reminder_thread(handle.clone(), data_dir_bg);
             app.manage(AppState {
@@ -448,6 +627,11 @@ fn main() {
             open_obsidian_uri,
             pick_markdown_file,
             pick_folder,
+            find_obsidian_note,
+            create_backup,
+            add_hour_log,
+            list_hour_logs_for_task,
+            delete_hour_log,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

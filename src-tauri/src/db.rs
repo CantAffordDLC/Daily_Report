@@ -39,6 +39,15 @@ pub fn open_and_init(db_path: &Path) -> Result<Connection, rusqlite::Error> {
             delta REAL NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_task_history_task_id ON task_history(task_id);
+        CREATE TABLE IF NOT EXISTS hour_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+            project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+            logged_date TEXT NOT NULL,
+            hours REAL NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_hour_logs_task_id ON hour_logs(task_id);
+        CREATE INDEX IF NOT EXISTS idx_hour_logs_project_id ON hour_logs(project_id);
         ",
     )?;
     migrate_obsidian_column(&conn)?;
@@ -87,6 +96,16 @@ pub struct TaskHistoryRow {
     pub task_id: i64,
     pub changed_at: String,
     pub delta: f64,
+}
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct HourLogRow {
+    pub id: i64,
+    pub task_id: i64,
+    pub project_id: i64,
+    pub logged_date: String,
+    pub hours: f64,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -339,6 +358,66 @@ fn normalize_obsidian_uri(input: Option<&str>, vault: &str) -> Option<String> {
         urlencoding::encode(v),
         file
     ))
+}
+
+pub fn add_hour_log(
+    conn: &Connection,
+    task_id: i64,
+    project_id: i64,
+    logged_date: &str,
+    hours: f64,
+) -> Result<(), rusqlite::Error> {
+    let now = chrono::Utc::now().to_rfc3339();
+    let n = conn.execute(
+        "UPDATE tasks SET time_hours = time_hours + ?1 WHERE id = ?2",
+        params![hours, task_id],
+    )?;
+    if n == 0 {
+        return Err(rusqlite::Error::QueryReturnedNoRows);
+    }
+    conn.execute(
+        "INSERT INTO hour_logs (task_id, project_id, logged_date, hours) VALUES (?1, ?2, ?3, ?4)",
+        params![task_id, project_id, logged_date, hours],
+    )?;
+    conn.execute(
+        "INSERT INTO task_history (task_id, changed_at, delta) VALUES (?1, ?2, ?3)",
+        params![task_id, now, hours],
+    )?;
+    Ok(())
+}
+
+pub fn list_hour_logs_for_task(
+    conn: &Connection,
+    task_id: i64,
+) -> Result<Vec<HourLogRow>, rusqlite::Error> {
+    let mut stmt = conn.prepare(
+        "SELECT id, task_id, project_id, logged_date, hours FROM hour_logs
+         WHERE task_id = ?1 ORDER BY logged_date DESC, id DESC",
+    )?;
+    let iter = stmt.query_map(params![task_id], |r| {
+        Ok(HourLogRow {
+            id: r.get(0)?,
+            task_id: r.get(1)?,
+            project_id: r.get(2)?,
+            logged_date: r.get(3)?,
+            hours: r.get(4)?,
+        })
+    })?;
+    iter.collect()
+}
+
+pub fn delete_hour_log(conn: &Connection, id: i64) -> Result<(), rusqlite::Error> {
+    let (task_id, hours): (i64, f64) = conn.query_row(
+        "SELECT task_id, hours FROM hour_logs WHERE id = ?1",
+        params![id],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    )?;
+    conn.execute(
+        "UPDATE tasks SET time_hours = MAX(0, time_hours - ?1) WHERE id = ?2",
+        params![hours, task_id],
+    )?;
+    conn.execute("DELETE FROM hour_logs WHERE id = ?1", params![id])?;
+    Ok(())
 }
 
 pub fn tasks_for_export_all_months(

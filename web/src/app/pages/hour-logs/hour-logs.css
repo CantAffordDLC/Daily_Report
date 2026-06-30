@@ -84,3 +84,13 @@ td {
 th {
   background: #f8fafc;
 }
+
+.month-sep-row .month-sep-cell {
+  background: #f0fdfa;
+  color: #0f766e;
+  font-weight: 600;
+  font-size: 0.8rem;
+  letter-spacing: 0.03em;
+  padding: 0.3rem 0.6rem;
+  border-top: 1px solid #ccfbf1;
+}

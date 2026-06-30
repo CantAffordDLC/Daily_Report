@@ -120,11 +120,16 @@
                 @for (t of tasksThisMonth; track t.id) {
                   <tr>
                     <td>{{ t.taskDate }}</td>
-                    <td>{{ t.timeHours }}</td>
-                    <td>{{ t.description }}</td>
+                    <td>{{ t.timeHours | number: '1.0-2' }}</td>
+                    <td>
+                      {{ t.description }}
+                      @if (t.dayType !== 'WORKDAY') {
+                        <span class="day-type-badge day-type-{{ t.dayType | lowercase }}">{{ t.dayType }}</span>
+                      }
+                    </td>
                     <td class="actions">
                       @if (t.obsidianUri) {
-                        <button type="button" class="btn link" (click)="openObsidian(t.obsidianUri)">Open</button>
+                        <button type="button" class="btn obsidian-open" (click)="openObsidian(t.obsidianUri)" [title]="noteLabel(t)">Open</button>
                       }
                       <button type="button" class="btn ghost" (click)="openEditTaskPopup(t)">Edit</button>
                       <button type="button" class="btn danger ghost" (click)="deleteTask(t)">Delete</button>
@@ -136,6 +141,53 @@
           </div>
         }
       </section>
+
+      @if (tasksOtherMonths.length) {
+        <section class="other-months-section">
+          <button
+            type="button"
+            class="btn ghost section-toggle"
+            (click)="toggleOtherMonths()"
+          >
+            {{ otherMonthsExpanded ? '▾' : '▸' }} Tasks from other months ({{ tasksOtherMonths.length }})
+          </button>
+          @if (otherMonthsExpanded) {
+            @for (grp of tasksByMonthOther; track grp.month) {
+              <div class="month-group">
+                <h4 class="month-group-title">{{ grp.month }}</h4>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr><th>Date</th><th>Hours</th><th>Name</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                      @for (t of grp.tasks; track t.id) {
+                        <tr>
+                          <td>{{ t.taskDate }}</td>
+                          <td>{{ t.timeHours | number: '1.0-2' }}</td>
+                          <td>
+                            {{ t.description }}
+                            @if (t.dayType !== 'WORKDAY') {
+                              <span class="day-type-badge day-type-{{ t.dayType | lowercase }}">{{ t.dayType }}</span>
+                            }
+                          </td>
+                          <td class="actions">
+                            @if (t.obsidianUri) {
+                              <button type="button" class="btn obsidian-open" (click)="openObsidian(t.obsidianUri)" [title]="noteLabel(t)">Open</button>
+                            }
+                            <button type="button" class="btn ghost" (click)="openEditTaskPopup(t)">Edit</button>
+                            <button type="button" class="btn danger ghost" (click)="deleteTask(t)">Delete</button>
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+          }
+        </section>
+      }
     </div>
   </div>
 
@@ -145,5 +197,12 @@
     [editTask]="editingTaskForDialog"
     (closed)="onTaskDialogClosed()"
     (saved)="loadTasks()"
+  />
+
+  <app-task-details-dialog
+    [task]="detailTask"
+    (closed)="closeDetailTask()"
+    (saved)="onDetailTaskSaved()"
+    (deleted)="onDetailTaskDeleted()"
   />
 }

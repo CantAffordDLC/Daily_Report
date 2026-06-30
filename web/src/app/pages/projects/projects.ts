@@ -7,11 +7,12 @@ import {
   TaskRow,
 } from '../../core/tauri.service';
 import { TaskDialogComponent } from '../tasks/task-dialog/task-dialog';
+import { TaskDetailsDialogComponent } from '../hours/task-details-dialog/task-details-dialog';
 
 @Component({
   selector: 'app-projects',
   standalone: true,
-  imports: [CommonModule, FormsModule, TaskDialogComponent],
+  imports: [CommonModule, FormsModule, TaskDialogComponent, TaskDetailsDialogComponent],
   templateUrl: './projects.html',
   styleUrl: './projects.css',
 })
@@ -43,6 +44,7 @@ export class ProjectsPage implements OnInit {
 
   taskFormOpen = false;
   editingTaskForDialog: TaskRow | null = null;
+  detailTask: TaskRow | null = null;
 
   ngOnInit(): void {
     void this.refresh();
@@ -76,11 +78,14 @@ export class ProjectsPage implements OnInit {
     return this.searchQuery.trim().toLowerCase();
   }
 
-  /** Projects shown in the grid: this month's projects when idle, search results when typing. */
+  /** Projects shown in the grid: this month's projects + projects with no tasks when idle, search results when typing. */
   get visibleProjects(): ProjectRow[] {
     const q = this.normalizedQuery;
     if (!q) {
-      return this.allProjects.filter((p) => this.monthlyProjectIds.has(p.id));
+      const taskProjectIds = new Set(this.allTasks.map((t) => t.projectId));
+      return this.allProjects.filter(
+        (p) => this.monthlyProjectIds.has(p.id) || !taskProjectIds.has(p.id),
+      );
     }
     const matchingProjectIds = new Set(
       this.allTasks
@@ -153,7 +158,12 @@ export class ProjectsPage implements OnInit {
     if (!confirm(`Delete project "${p.name}" and all its tasks?`)) return;
     try {
       await this.tauri.deleteProject(p.id);
-      if (this.activeProject?.id === p.id) this.closeModal();
+      if (this.activeProject?.id === p.id) {
+        this.modalOpen = false;
+        this.activeProject = null;
+        this.tasks = [];
+        this.cdr.detectChanges();
+      }
       await this.refresh();
     } catch (e) {
       alert(String(e));
@@ -163,8 +173,12 @@ export class ProjectsPage implements OnInit {
   async openProject(p: ProjectRow): Promise<void> {
     this.activeProject = p;
     this.modalOpen = true;
+    this.tasks = [];
+    this.otherMonthsExpanded = false;
     this.taskFormOpen = false;
     this.editingTaskForDialog = null;
+    this.detailTask = null;
+    this.cdr.detectChanges();
     await this.loadTasks();
   }
 
@@ -172,9 +186,12 @@ export class ProjectsPage implements OnInit {
     this.modalOpen = false;
     this.activeProject = null;
     this.tasks = [];
+    this.otherMonthsExpanded = false;
     this.taskFormOpen = false;
     this.editingTaskForDialog = null;
+    this.detailTask = null;
     this.cdr.detectChanges();
+    void this.refresh();
   }
 
   openAddTaskPopup(): void {
@@ -183,9 +200,29 @@ export class ProjectsPage implements OnInit {
   }
 
   openEditTaskPopup(t: TaskRow): void {
-    this.editingTaskForDialog = t;
-    this.taskFormOpen = true;
+    this.detailTask = t;
     this.cdr.detectChanges();
+  }
+
+  closeDetailTask(): void {
+    this.detailTask = null;
+    this.cdr.detectChanges();
+  }
+
+  async onDetailTaskSaved(): Promise<void> {
+    await this.loadTasks();
+    void this.refresh();
+    if (this.detailTask) {
+      const refreshed = this.tasks.find((t) => t.id === this.detailTask!.id) ?? null;
+      this.detailTask = refreshed;
+      this.cdr.detectChanges();
+    }
+  }
+
+  async onDetailTaskDeleted(): Promise<void> {
+    this.detailTask = null;
+    await this.loadTasks();
+    void this.refresh();
   }
 
   onTaskDialogClosed(): void {
@@ -237,14 +274,50 @@ export class ProjectsPage implements OnInit {
     if (!t.obsidianUri) return '—';
     if (t.obsidianUri.startsWith('obsidian://open?path=')) {
       try {
-        const q = t.obsidianUri.split('path=')[1];
-        return decodeURIComponent(q || '');
+        const encoded = t.obsidianUri.slice('obsidian://open?path='.length);
+        const fullPath = decodeURIComponent(encoded).replace(/\\/g, '/');
+        const parts = fullPath.split('/').filter(Boolean);
+        return parts[parts.length - 1] ?? fullPath;
       } catch {
         return t.obsidianUri;
       }
     }
+    if (t.obsidianUri.startsWith('obsidian://')) {
+      try {
+        const url = new URL(t.obsidianUri);
+        const file = url.searchParams.get('file');
+        if (file) {
+          const decoded = decodeURIComponent(file).replace(/\\/g, '/');
+          return decoded.split('/').filter(Boolean).pop() ?? decoded;
+        }
+      } catch { /* fallthrough */ }
+    }
     return t.obsidianUri.length > 40
       ? t.obsidianUri.slice(0, 40) + '…'
       : t.obsidianUri;
+  }
+
+  otherMonthsExpanded = false;
+
+  toggleOtherMonths(): void {
+    this.otherMonthsExpanded = !this.otherMonthsExpanded;
+    this.cdr.detectChanges();
+  }
+
+  get tasksOtherMonths(): TaskRow[] {
+    return this.tasks.filter((t) => !t.taskDate.startsWith(this.currentYearMonth));
+  }
+
+  get tasksByMonthOther(): { month: string; tasks: TaskRow[] }[] {
+    const map = new Map<string, TaskRow[]>();
+    for (const t of this.tasksOtherMonths) {
+      const ym = t.taskDate.slice(0, 7);
+      const arr = map.get(ym) ?? [];
+      arr.push(t);
+      map.set(ym, arr);
+    }
+    return Array.from(map.entries())
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([month, tasks]) => ({ month, tasks }));
   }
 }

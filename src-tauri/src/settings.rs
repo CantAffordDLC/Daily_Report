@@ -19,10 +19,25 @@ pub struct AppSettings {
     /// Six-field cron (second minute hour day month weekday), local time.
     #[serde(default = "default_reminder_cron")]
     pub reminder_cron: String,
+    // Backup
+    #[serde(default)]
+    pub backup_enabled: bool,
+    /// "daily" | "weekly" | "monthly" | "annual"
+    #[serde(default = "default_backup_frequency")]
+    pub backup_frequency: String,
+    #[serde(default)]
+    pub backup_path: String,
+    /// YYYY-MM-DD of the last successful backup (internal, not exposed to UI).
+    #[serde(default)]
+    pub last_backup_date: String,
 }
 
 fn default_reminder_cron() -> String {
     "0 0 9,12,17 * * *".to_string()
+}
+
+fn default_backup_frequency() -> String {
+    "daily".to_string()
 }
 
 impl Default for AppSettings {
@@ -39,6 +54,10 @@ impl Default for AppSettings {
             obsidian_auto_create: false,
             reminder_enabled: false,
             reminder_cron: default_reminder_cron(),
+            backup_enabled: false,
+            backup_frequency: default_backup_frequency(),
+            backup_path: String::new(),
+            last_backup_date: String::new(),
         }
     }
 }

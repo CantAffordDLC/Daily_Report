@@ -7,28 +7,54 @@
     </div>
 
     <div class="details-body">
+      <!-- LEFT: Hour logs -->
       <section class="history-panel">
-        <h3 class="panel-title">History</h3>
+        <h3 class="panel-title">Hour logs</h3>
+
+        <div class="hours-counter">
+          <span class="counter-item">
+            <span class="counter-label">Total</span>
+            <span class="counter-value">{{ task.timeHours | number: '1.0-2' }} h</span>
+          </span>
+          <span class="counter-sep">·</span>
+          <span class="counter-item">
+            <span class="counter-label">{{ currentYearMonth }}</span>
+            <span class="counter-value">{{ currentMonthHours | number: '1.0-2' }} h</span>
+          </span>
+        </div>
+
+        <div class="add-hours-row">
+          <input
+            type="number"
+            class="input input-hours"
+            step="0.25"
+            min="0.25"
+            placeholder="Hours"
+            [(ngModel)]="logHours"
+          />
+          <button type="button" class="btn primary" (click)="addLogEntry()">Add</button>
+        </div>
+
         @if (historyLoading) {
           <p class="muted">Loading…</p>
-        } @else if (!history.length) {
-          <p class="muted">No history yet.</p>
+        } @else if (!hourLogs.length) {
+          <p class="muted small">No logs yet.</p>
         } @else {
           <ul class="history-list">
-            @for (h of history; track h.id) {
+            @for (l of hourLogs; track l.id) {
               <li class="history-row">
-                <span class="delta" [class.positive]="h.delta > 0" [class.negative]="h.delta < 0">
-                  {{ formatDelta(h.delta) }}
-                </span>
-                <span class="history-date muted">{{ formatDate(h.changedAt) }}</span>
+                <span class="history-date muted">{{ l.loggedDate }}</span>
+                <span class="delta positive">+{{ l.hours | number: '1.0-2' }} h</span>
+                <button type="button" class="btn ghost btn-sm" (click)="deleteLogEntry(l.id)" title="Delete">×</button>
               </li>
             }
           </ul>
         }
       </section>
 
+      <!-- RIGHT: Edit -->
       <section class="edit-panel">
-        <h3 class="panel-title">Edit</h3>
+        <h3 class="panel-title">Edit task</h3>
 
         <label class="field">
           <span class="label">Name</span>
@@ -39,10 +65,6 @@
           <label class="field">
             <span class="label">Date</span>
             <input type="date" class="input" [(ngModel)]="taskDate" [disabled]="saving" />
-          </label>
-          <label class="field narrow">
-            <span class="label">Hours</span>
-            <input type="number" class="input" step="0.25" min="0" [(ngModel)]="timeHours" [disabled]="saving" />
           </label>
         </div>
 

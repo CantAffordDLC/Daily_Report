@@ -24,6 +24,14 @@ export interface TaskHistoryRow {
   delta: number;
 }
 
+export interface HourLogRow {
+  id: number;
+  taskId: number;
+  projectId: number;
+  loggedDate: string;
+  hours: number;
+}
+
 export interface MonthlyHourRow {
   yearMonth: string;
   projectId: number;
@@ -44,6 +52,11 @@ export interface AppSettings {
    * Example: `0 0 9,17 * * 1-5` → 09:00 and 17:00 on weekdays.
    */
   reminderCron: string;
+  // Backup
+  backupEnabled: boolean;
+  /** "daily" | "weekly" | "monthly" | "annual" */
+  backupFrequency: string;
+  backupPath: string;
 }
 
 type TauriWindow = Window & {
@@ -154,8 +167,13 @@ export class TauriService {
     description: string;
     timeHours: number;
     obsidianInput: string | null;
+    createNote?: boolean;
   }): Promise<number> {
     return this.invokeCmd<number>('create_task', params as unknown as Record<string, unknown>);
+  }
+
+  findObsidianNote(projectId: number, taskName: string): Promise<string | null> {
+    return this.invokeCmd<string | null>('find_obsidian_note', { projectId, taskName });
   }
 
   updateTask(params: {
@@ -192,5 +210,21 @@ export class TauriService {
 
   getMonthlyHourLogs(year: number | null): Promise<MonthlyHourRow[]> {
     return this.invokeCmd<MonthlyHourRow[]>('get_monthly_hour_logs', { year });
+  }
+
+  addHourLog(taskId: number, projectId: number, loggedDate: string, hours: number): Promise<void> {
+    return this.invokeCmd('add_hour_log', { taskId, projectId, loggedDate, hours });
+  }
+
+  listHourLogsForTask(taskId: number): Promise<HourLogRow[]> {
+    return this.invokeCmd<HourLogRow[]>('list_hour_logs_for_task', { taskId });
+  }
+
+  deleteHourLog(id: number): Promise<void> {
+    return this.invokeCmd('delete_hour_log', { id });
+  }
+
+  createBackup(): Promise<string> {
+    return this.invokeCmd<string>('create_backup');
   }
 }

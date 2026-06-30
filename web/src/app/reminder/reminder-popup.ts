@@ -208,14 +208,15 @@ export class ReminderPopupComponent implements OnChanges {
     this.saving = true;
     try {
       const projectId = await this.resolveProjectId();
-      await this.tauri.createTask({
+      const taskId = await this.tauri.createTask({
         projectId,
         taskDate: this.taskDate,
         dayType: ReminderPopupComponent.DAY_TYPE,
         description: desc,
-        timeHours: this.timeHours,
+        timeHours: 0,
         obsidianInput: null,
       });
+      await this.tauri.addHourLog(taskId, projectId, this.taskDate, this.timeHours);
       this.saved.emit();
       this.closed.emit();
     } catch (e) {

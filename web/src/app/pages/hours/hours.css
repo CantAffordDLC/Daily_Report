@@ -202,3 +202,13 @@ td.num {
   font-size: 0.8rem;
   padding: 0.25rem 0.5rem;
 }
+
+.month-sep-row .month-sep-cell {
+  background: #f0fdfa;
+  color: #0f766e;
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.65rem;
+  border-top: 1px solid #ccfbf1;
+}

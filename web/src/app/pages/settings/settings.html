@@ -81,6 +81,61 @@
     </div>
   </section>
 
+  <!-- Backup -->
+  <section class="card">
+    <h2 class="section-title">Backup</h2>
+
+    <div class="block toggle-block">
+      <label class="check">
+        <input type="checkbox" [(ngModel)]="backupEnabled" />
+        Enable automatic backup
+      </label>
+      <p class="hint">
+        A copy of your database is created automatically on startup if the chosen interval has passed.
+      </p>
+    </div>
+
+    @if (backupEnabled) {
+      <div class="block form-row">
+        <label>
+          Frequency
+          <select class="input" [(ngModel)]="backupFrequency">
+            @for (opt of backupFrequencyOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </label>
+      </div>
+
+      <label class="block">
+        Backup folder
+        <div class="path-row">
+          <input
+            type="text"
+            class="input wide"
+            [(ngModel)]="backupPath"
+            placeholder="Folder where backup files will be saved"
+          />
+          <button type="button" class="btn secondary" (click)="browseBackupPath()">Browse…</button>
+        </div>
+      </label>
+    }
+
+    <div class="block">
+      <button
+        type="button"
+        class="btn secondary"
+        (click)="runBackup()"
+        [disabled]="!backupPath.trim()"
+      >
+        Backup now
+      </button>
+      @if (backupMessage) {
+        <p class="ok tight">{{ backupMessage }}</p>
+      }
+    </div>
+  </section>
+
   <div class="save-row">
     <button type="button" class="btn primary" (click)="save()">Save settings</button>
     @if (message) {

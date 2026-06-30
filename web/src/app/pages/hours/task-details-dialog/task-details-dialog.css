@@ -58,6 +58,62 @@
   background: #f8fafc;
 }
 
+.hours-counter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.65rem;
+  background: #e0f2fe;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.counter-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+}
+
+.counter-label {
+  font-size: 0.7rem;
+  color: #475569;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.counter-value {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #0f766e;
+  font-variant-numeric: tabular-nums;
+}
+
+.counter-sep {
+  color: #94a3b8;
+  font-size: 1.2rem;
+  align-self: center;
+}
+
+.add-hours-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.input-hours {
+  width: 6rem;
+  min-width: 0;
+}
+
+.btn-sm {
+  padding: 0.15rem 0.4rem;
+  font-size: 0.85rem;
+}
+
 .panel-title {
   margin: 0 0 0.75rem;
   font-size: 0.85rem;
@@ -199,6 +255,6 @@
   .history-panel {
     border-right: none;
     border-bottom: 1px solid #e2e8f0;
-    max-height: 200px;
+    max-height: 240px;
   }
 }

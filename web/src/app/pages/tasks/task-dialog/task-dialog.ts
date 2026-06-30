@@ -3,10 +3,11 @@ import {
   Component,
   EventEmitter,
   Input,
-  Output,
-  inject,
   OnChanges,
+  OnInit,
+  Output,
   SimpleChanges,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -19,11 +20,15 @@ import { TauriService, TaskRow } from '../../../core/tauri.service';
   templateUrl: './task-dialog.html',
   styleUrl: './task-dialog.css',
 })
-export class TaskDialogComponent implements OnChanges {
+export class TaskDialogComponent implements OnInit, OnChanges {
   private readonly tauri = inject(TauriService);
   private readonly cdr = inject(ChangeDetectorRef);
-  /** Backend still expects `day_type` until you remove it; fixed value from UI. */
-  private static readonly DAY_TYPE = 'WORKDAY' as const;
+
+  readonly dayTypeOptions = [
+    { value: 'WORKDAY', label: 'Normal' },
+    { value: 'FERIAS', label: 'Férias' },
+    { value: 'FOLGA', label: 'Folga' },
+  ] as const;
 
   /** When true, the popup is visible. */
   @Input({ required: true }) open = false;
@@ -37,10 +42,19 @@ export class TaskDialogComponent implements OnChanges {
   taskDate = '';
   /** Shown as “Name” in the UI; stored as task description in the backend. */
   taskName = '';
-  timeHours = 1;
+  dayType = 'WORKDAY';
   obsidianDraft = '';
+  createNote = false;
+  obsidianConfigured = false;
 
   saving = false;
+
+  ngOnInit(): void {
+    void this.tauri.getSettings().then((s) => {
+      this.obsidianConfigured = !!s.obsidianVaultPath?.trim();
+      this.cdr.detectChanges();
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (!this.open) return;
@@ -51,13 +65,15 @@ export class TaskDialogComponent implements OnChanges {
     if (t) {
       this.taskDate = t.taskDate;
       this.taskName = t.description;
-      this.timeHours = t.timeHours;
+      this.dayType = t.dayType ?? 'WORKDAY';
       this.obsidianDraft = t.obsidianUri ?? '';
+      this.createNote = false;
       return;
     }
     this.taskName = '';
-    this.timeHours = 1;
+    this.dayType = 'WORKDAY';
     this.obsidianDraft = '';
+    this.createNote = false;
     void this.tauri.getCurrentDate().then(
       (d) => {
         this.taskDate = d;
@@ -111,25 +127,45 @@ export class TaskDialogComponent implements OnChanges {
     }
     this.saving = true;
     try {
-      const obs = this.obsidianPayload();
+      let obs = this.obsidianPayload();
+      let forceCreate = false;
+
+      if (!this.editTask && this.createNote && !obs) {
+        // Check if a note with this name already exists in the vault
+        const existing = await this.tauri.findObsidianNote(this.projectId, name);
+        if (existing) {
+          const link = confirm(
+            `A note "${name}.md" already exists in the vault.\n\nClick OK to link it, or Cancel to create a new one.`,
+          );
+          if (link) {
+            obs = existing;
+          } else {
+            forceCreate = true;
+          }
+        } else {
+          forceCreate = true;
+        }
+      }
+
       if (this.editTask) {
         await this.tauri.updateTask({
           id: this.editTask.id,
           projectId: this.projectId,
           taskDate: this.taskDate,
-          dayType: TaskDialogComponent.DAY_TYPE,
+          dayType: this.dayType,
           description: name,
-          timeHours: this.timeHours,
+          timeHours: this.editTask.timeHours,
           obsidianInput: obs,
         });
       } else {
         await this.tauri.createTask({
           projectId: this.projectId,
           taskDate: this.taskDate,
-          dayType: TaskDialogComponent.DAY_TYPE,
+          dayType: this.dayType,
           description: name,
-          timeHours: this.timeHours,
+          timeHours: 0,
           obsidianInput: obs,
+          createNote: forceCreate || undefined,
         });
       }
       this.saved.emit();

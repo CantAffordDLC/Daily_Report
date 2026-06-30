@@ -35,6 +35,17 @@ export class HoursPage implements OnInit {
 
   detailTask: TaskRow | null = null;
 
+  tasksByMonth(tasks: TaskRow[]): { month: string; tasks: TaskRow[] }[] {
+    const map = new Map<string, TaskRow[]>();
+    for (const t of tasks) {
+      const ym = t.taskDate.slice(0, 7);
+      const arr = map.get(ym) ?? [];
+      arr.push(t);
+      map.set(ym, arr);
+    }
+    return Array.from(map.entries()).map(([month, tasks]) => ({ month, tasks }));
+  }
+
   ngOnInit(): void {
     void this.refresh();
   }

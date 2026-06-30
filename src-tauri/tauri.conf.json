@@ -33,6 +33,11 @@
     "security": {
       "csp": null
     },
+    "systemTray": {
+      "iconPath": "icons/32x32.png",
+      "iconAsTemplate": false,
+      "menuOnLeftClick": false
+    },
     "bundle": {
       "active": true,
       "targets": "all",

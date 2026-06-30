@@ -24,8 +24,12 @@
           <input type="date" class="input" [(ngModel)]="taskDate" />
         </label>
         <label class="field narrow">
-          <span class="label">Hours</span>
-          <input type="number" class="input" step="1" min="0" [(ngModel)]="timeHours" />
+          <span class="label">Day type</span>
+          <select class="input" [(ngModel)]="dayType">
+            @for (opt of dayTypeOptions; track opt.value) {
+              <option [value]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
         </label>
       </div>
 
@@ -46,6 +50,13 @@
           <button type="button" class="btn ghost" (click)="clearNote()" [disabled]="saving">Clear</button>
         }
       </div>
+
+      @if (!editTask && obsidianConfigured && !obsidianDraft.trim()) {
+        <label class="check-row">
+          <input type="checkbox" [(ngModel)]="createNote" [disabled]="saving" />
+          Create Obsidian note for this task
+        </label>
+      }
     </div>
 
     <div class="task-dialog-footer">

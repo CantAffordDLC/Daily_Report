@@ -61,26 +61,31 @@
                 </tr>
               </thead>
               <tbody>
-                @for (t of g.tasks; track t.id) {
-                  <tr>
-                    <td>{{ t.taskDate }}</td>
-                    <td class="num">{{ t.timeHours | number: '1.0-2' }}</td>
-                    <td>{{ t.description }}</td>
-                    <td class="add-cell">
-                      <input
-                        type="number"
-                        class="input input-hours"
-                        step="0.25"
-                        min="0.01"
-                        placeholder="—"
-                        [(ngModel)]="hourDraft[t.id]"
-                        [disabled]="savingAll"
-                      />
-                    </td>
-                    <td class="details-cell">
-                      <button type="button" class="btn ghost btn-details" (click)="openDetails(t)">Details</button>
-                    </td>
+                @for (grp of tasksByMonth(g.tasks); track grp.month) {
+                  <tr class="month-sep-row">
+                    <td colspan="5" class="month-sep-cell">{{ grp.month }}</td>
                   </tr>
+                  @for (t of grp.tasks; track t.id) {
+                    <tr>
+                      <td>{{ t.taskDate }}</td>
+                      <td class="num">{{ t.timeHours | number: '1.0-2' }}</td>
+                      <td>{{ t.description }}</td>
+                      <td class="add-cell">
+                        <input
+                          type="number"
+                          class="input input-hours"
+                          step="0.25"
+                          min="0.01"
+                          placeholder="—"
+                          [(ngModel)]="hourDraft[t.id]"
+                          [disabled]="savingAll"
+                        />
+                      </td>
+                      <td class="details-cell">
+                        <button type="button" class="btn ghost btn-details" (click)="openDetails(t)">Details</button>
+                      </td>
+                    </tr>
+                  }
                 }
               </tbody>
             </table>
@@ -114,6 +119,6 @@
 <app-task-details-dialog
   [task]="detailTask"
   (closed)="closeDetails()"
-  (saved)="closeDetails(); refresh()"
+  (saved)="refresh()"
   (deleted)="closeDetails(); refresh()"
 />

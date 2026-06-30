@@ -329,3 +329,56 @@ td.actions {
   margin-left: 0.4rem;
   vertical-align: middle;
 }
+
+.other-months-section {
+  margin-top: 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 0.75rem;
+}
+
+.section-toggle {
+  font-size: 0.9rem;
+  padding: 0.35rem 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.month-group {
+  margin-bottom: 1rem;
+}
+
+.month-group-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 0.4rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.day-type-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.day-type-badge.day-type-ferias {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.day-type-badge.day-type-folga {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.btn.obsidian-open {
+  background: #0f766e;
+  color: #fff;
+}
+
+.btn.obsidian-open:hover {
+  background: #0d6460;
+}
