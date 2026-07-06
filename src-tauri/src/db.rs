@@ -87,6 +87,8 @@ pub struct TaskRow {
     pub description: String,
     pub time_hours: f64,
     pub obsidian_uri: Option<String>,
+    /// Most recent logged_date from hour_logs for this task, if any.
+    pub last_log_date: Option<String>,
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -167,8 +169,13 @@ pub fn list_tasks_for_date(
     task_date: &str,
 ) -> Result<Vec<TaskRow>, rusqlite::Error> {
     let mut stmt = conn.prepare(
-        "SELECT id, project_id, task_date, day_type, description, time_hours, obsidian_uri
-         FROM tasks WHERE project_id = ?1 AND task_date = ?2 ORDER BY id",
+        "SELECT t.id, t.project_id, t.task_date, t.day_type, t.description, t.time_hours,
+                t.obsidian_uri, MAX(hl.logged_date) AS last_log_date
+         FROM tasks t
+         LEFT JOIN hour_logs hl ON hl.task_id = t.id
+         WHERE t.project_id = ?1 AND t.task_date = ?2
+         GROUP BY t.id
+         ORDER BY t.id",
     )?;
     map_task_rows(&mut stmt, params![project_id, task_date])
 }
@@ -178,16 +185,25 @@ pub fn list_tasks_for_project(
     project_id: i64,
 ) -> Result<Vec<TaskRow>, rusqlite::Error> {
     let mut stmt = conn.prepare(
-        "SELECT id, project_id, task_date, day_type, description, time_hours, obsidian_uri
-         FROM tasks WHERE project_id = ?1 ORDER BY task_date DESC, id DESC",
+        "SELECT t.id, t.project_id, t.task_date, t.day_type, t.description, t.time_hours,
+                t.obsidian_uri, MAX(hl.logged_date) AS last_log_date
+         FROM tasks t
+         LEFT JOIN hour_logs hl ON hl.task_id = t.id
+         WHERE t.project_id = ?1
+         GROUP BY t.id
+         ORDER BY COALESCE(MAX(hl.logged_date), t.task_date) DESC, t.id DESC",
     )?;
     map_task_rows(&mut stmt, params![project_id])
 }
 
 pub fn list_all_tasks(conn: &Connection) -> Result<Vec<TaskRow>, rusqlite::Error> {
     let mut stmt = conn.prepare(
-        "SELECT id, project_id, task_date, day_type, description, time_hours, obsidian_uri
-         FROM tasks ORDER BY task_date DESC, id DESC",
+        "SELECT t.id, t.project_id, t.task_date, t.day_type, t.description, t.time_hours,
+                t.obsidian_uri, MAX(hl.logged_date) AS last_log_date
+         FROM tasks t
+         LEFT JOIN hour_logs hl ON hl.task_id = t.id
+         GROUP BY t.id
+         ORDER BY COALESCE(MAX(hl.logged_date), t.task_date) DESC, t.id DESC",
     )?;
     map_task_rows(&mut stmt, [])
 }
@@ -240,6 +256,7 @@ fn map_task_rows(
             description: r.get(4)?,
             time_hours: r.get(5)?,
             obsidian_uri: r.get(6)?,
+            last_log_date: r.get(7)?,
         })
     })?;
     iter.collect()
@@ -429,9 +446,13 @@ pub fn tasks_for_export_all_months(
     }
     let mut all = Vec::new();
     let mut stmt = conn.prepare(
-        "SELECT id, project_id, task_date, day_type, description, time_hours, obsidian_uri
-         FROM tasks WHERE strftime('%Y-%m', task_date) = ?1
-         ORDER BY task_date, id",
+        "SELECT t.id, t.project_id, t.task_date, t.day_type, t.description, t.time_hours,
+                t.obsidian_uri, MAX(hl.logged_date) AS last_log_date
+         FROM tasks t
+         LEFT JOIN hour_logs hl ON hl.task_id = t.id
+         WHERE strftime('%Y-%m', t.task_date) = ?1
+         GROUP BY t.id
+         ORDER BY t.task_date, t.id",
     )?;
     for m in months {
         let rows = stmt.query_map(params![m], |r| {
@@ -443,6 +464,7 @@ pub fn tasks_for_export_all_months(
                 description: r.get(4)?,
                 time_hours: r.get(5)?,
                 obsidian_uri: r.get(6)?,
+                last_log_date: r.get(7)?,
             })
         })?;
         for row in rows {
@@ -461,14 +483,16 @@ pub fn monthly_hour_logs(
     conn: &Connection,
     year: Option<i32>,
 ) -> Result<Vec<MonthlyHourRow>, rusqlite::Error> {
+    // Group by the actual logged_date from hour_logs (not task_date),
+    // so months reflect when work was done, not when the task was created.
     match year {
         Some(y) => {
             let mut stmt = conn.prepare(
-                "SELECT strftime('%Y-%m', t.task_date) AS ym, t.project_id, p.name,
-                        SUM(t.time_hours) AS th
-                 FROM tasks t JOIN projects p ON p.id = t.project_id
-                 WHERE strftime('%Y', t.task_date) = ?1
-                 GROUP BY ym, t.project_id
+                "SELECT strftime('%Y-%m', hl.logged_date) AS ym, hl.project_id, p.name,
+                        SUM(hl.hours) AS th
+                 FROM hour_logs hl JOIN projects p ON p.id = hl.project_id
+                 WHERE strftime('%Y', hl.logged_date) = ?1
+                 GROUP BY ym, hl.project_id
                  ORDER BY ym DESC, p.name COLLATE NOCASE",
             )?;
             let iter = stmt.query_map(params![format!("{:04}", y)], |r| {
@@ -487,10 +511,10 @@ pub fn monthly_hour_logs(
         }
         None => {
             let mut stmt = conn.prepare(
-                "SELECT strftime('%Y-%m', t.task_date) AS ym, t.project_id, p.name,
-                        SUM(t.time_hours) AS th
-                 FROM tasks t JOIN projects p ON p.id = t.project_id
-                 GROUP BY ym, t.project_id
+                "SELECT strftime('%Y-%m', hl.logged_date) AS ym, hl.project_id, p.name,
+                        SUM(hl.hours) AS th
+                 FROM hour_logs hl JOIN projects p ON p.id = hl.project_id
+                 GROUP BY ym, hl.project_id
                  ORDER BY ym DESC, p.name COLLATE NOCASE",
             )?;
             let iter = stmt.query_map([], |r| {

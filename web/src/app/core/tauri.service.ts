@@ -15,6 +15,8 @@ export interface TaskRow {
   description: string;
   timeHours: number;
   obsidianUri: string | null;
+  /** Most recent hour_log.logged_date for this task, null if no logs yet. */
+  lastLogDate: string | null;
 }
 
 export interface TaskHistoryRow {

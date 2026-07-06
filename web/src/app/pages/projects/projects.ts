@@ -231,8 +231,15 @@ export class ProjectsPage implements OnInit {
     this.cdr.detectChanges();
   }
 
+  /** Effective date = max(taskDate, lastLogDate). Task is "this month" if either falls in current month. */
+  private effectiveMonth(t: TaskRow): string {
+    const logYm = t.lastLogDate ? t.lastLogDate.slice(0, 7) : '';
+    const taskYm = t.taskDate.slice(0, 7);
+    return logYm > taskYm ? logYm : taskYm;
+  }
+
   get tasksThisMonth(): TaskRow[] {
-    return this.tasks.filter((t) => t.taskDate.startsWith(this.currentYearMonth));
+    return this.tasks.filter((t) => this.effectiveMonth(t) === this.currentYearMonth);
   }
 
   async loadTasks(): Promise<void> {
@@ -305,7 +312,7 @@ export class ProjectsPage implements OnInit {
   }
 
   get tasksOtherMonths(): TaskRow[] {
-    return this.tasks.filter((t) => !t.taskDate.startsWith(this.currentYearMonth));
+    return this.tasks.filter((t) => this.effectiveMonth(t) !== this.currentYearMonth);
   }
 
   get tasksByMonthOther(): { month: string; tasks: TaskRow[] }[] {
