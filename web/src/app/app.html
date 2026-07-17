@@ -6,7 +6,7 @@
       <a routerLink="/hours" routerLinkActive="active">Hours</a>
       <a routerLink="/hour-logs" routerLinkActive="active">Hour logs</a>
       <a routerLink="/reports" routerLinkActive="active">Reports</a>
-      <a routerLink="/settings" routerLinkActive="active">Settings</a>
+      <button type="button" class="nav-btn" (click)="openSettings()">⚙ Settings</button>
     </nav>
   </header>
   <main class="main">
@@ -18,4 +18,9 @@
   [open]="reminderOpen"
   (closed)="onReminderClosed()"
   (saved)="onReminderClosed()"
+/>
+
+<app-settings-dialog
+  [open]="settingsOpen"
+  (closed)="closeSettings()"
 />

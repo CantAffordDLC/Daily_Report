@@ -8,7 +8,7 @@
     <div class="row">
       <label>
         Year
-        <select class="input" [(ngModel)]="logsYear" (ngModelChange)="refreshLogs()">
+        <select class="input" [(ngModel)]="logsYear" (ngModelChange)="onYearOrMonthChange()">
           <option [ngValue]="''">All years</option>
           @for (y of yearChoices; track y) {
             <option [ngValue]="y">{{ y }}</option>
@@ -17,15 +17,49 @@
       </label>
       <label>
         Month
-        <select class="input" [(ngModel)]="logsMonth" (ngModelChange)="applyFilters()">
+        <select class="input" [(ngModel)]="logsMonth" (ngModelChange)="onYearOrMonthChange()">
           <option value="">All months</option>
           @for (m of monthChoices; track m.value) {
             <option [value]="m.value">{{ m.label }}</option>
           }
         </select>
       </label>
+      <label>
+        Day
+        <input type="date" class="input" [(ngModel)]="logsDay" (ngModelChange)="onDayChange()" />
+      </label>
       <button type="button" class="btn secondary" (click)="refreshLogs()">Refresh</button>
     </div>
+
+    @if (logsDay && !logsLoading) {
+      <h2>Daily detail — {{ logsDay }}</h2>
+      @if (!dailyRows.length) {
+        <p class="muted">No hour logs recorded on this day.</p>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Project</th>
+                <th>Hours</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (r of dailyRows; track r.projectId) {
+                <tr>
+                  <td>{{ r.projectName }}</td>
+                  <td>{{ r.totalHours | number: '1.2-2' }}</td>
+                </tr>
+              }
+              <tr class="total-row">
+                <td><strong>Total</strong></td>
+                <td><strong>{{ dailyTotal | number: '1.2-2' }}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      }
+    }
 
     <h2>By project</h2>
     @if (logsLoading) {

@@ -102,6 +102,7 @@ export class SettingsPage implements OnInit {
       const settings: AppSettings = {
         exportPath,
         defaultObsidianVault: this.defaultObsidianVault.trim(),
+        obsidianEnabled: !!this.obsidianVaultPath.trim(),
         obsidianVaultPath: this.obsidianVaultPath.trim(),
         obsidianProjectsFolder: this.obsidianProjectsFolder.trim(),
         obsidianAutoCreate: this.obsidianAutoCreate,

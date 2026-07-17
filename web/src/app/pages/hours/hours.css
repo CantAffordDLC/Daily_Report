@@ -47,6 +47,18 @@
   min-width: 12rem;
 }
 
+.filter-select {
+  min-width: 0;
+  width: 8rem;
+  flex-shrink: 0;
+}
+
+.filter-date {
+  min-width: 0;
+  width: 9.5rem;
+  flex-shrink: 0;
+}
+
 .input-hours {
   min-width: 0;
   width: 5.5rem;

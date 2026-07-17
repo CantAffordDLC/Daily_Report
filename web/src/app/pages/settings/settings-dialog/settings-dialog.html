@@ -1,0 +1,187 @@
+@if (open) {
+  <div class="dialog-backdrop" (click)="backdropClick($event)">
+    <div class="dialog" role="dialog" aria-modal="true" aria-label="Settings">
+
+      <!-- ── Lateral nav ── -->
+      <nav class="dialog-sidebar">
+        <p class="sidebar-title">Settings</p>
+        @for (tab of tabs; track tab.id) {
+          <button
+            type="button"
+            class="sidebar-tab"
+            [class.active]="activeTab === tab.id"
+            (click)="setTab(tab.id)"
+          >
+            <span class="tab-icon">{{ tab.icon }}</span>
+            <span>{{ tab.label }}</span>
+          </button>
+        }
+        <div class="sidebar-spacer"></div>
+        <button type="button" class="sidebar-close" (click)="close()">✕ Close</button>
+      </nav>
+
+      <!-- ── Content area ── -->
+      <div class="dialog-body">
+
+        <!-- GENERAL ──────────────────────────────────────────────────────── -->
+        @if (activeTab === 'general') {
+          <h2 class="tab-title">General</h2>
+          <section class="section">
+            <h3 class="section-label">Export</h3>
+            <label class="field">
+              <span class="field-label">Export folder</span>
+              <input type="text" class="input wide" [(ngModel)]="exportPath" placeholder="Folder for Excel exports" />
+            </label>
+          </section>
+        }
+
+        <!-- ADD-ONS ──────────────────────────────────────────────────────── -->
+        @if (activeTab === 'addons') {
+          <h2 class="tab-title">Add-ons</h2>
+          <p class="tab-desc">Enable or disable optional integrations. Each add-on can be configured independently.</p>
+
+          <!-- Obsidian plugin card -->
+          <div class="plugin-card" [class.enabled]="obsidianEnabled">
+            <div class="plugin-header">
+              <div class="plugin-icon">📝</div>
+              <div class="plugin-meta">
+                <strong class="plugin-name">Obsidian Integration</strong>
+                <p class="plugin-desc">Link tasks to Obsidian notes, auto-create folder notes, and open files directly in Obsidian.</p>
+              </div>
+              <div class="plugin-actions">
+                <label class="toggle">
+                  <input type="checkbox" [(ngModel)]="obsidianEnabled" (ngModelChange)="onObsidianToggle()" />
+                  <span class="toggle-track"></span>
+                </label>
+                @if (obsidianEnabled) {
+                  <button type="button" class="btn-configure" (click)="obsidianExpanded = !obsidianExpanded">
+                    {{ obsidianExpanded ? 'Hide config' : 'Configure' }}
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (obsidianEnabled && obsidianExpanded) {
+              <div class="plugin-config">
+                <label class="field">
+                  <span class="field-label">Vault folder path</span>
+                  <div class="path-row">
+                    <input type="text" class="input wide" [(ngModel)]="obsidianVaultPath" placeholder="Absolute path to your Obsidian vault" />
+                    <button type="button" class="btn secondary" (click)="browseVaultPath()">Browse…</button>
+                  </div>
+                </label>
+                <label class="field">
+                  <span class="field-label">Projects root folder</span>
+                  <div class="path-row">
+                    <input type="text" class="input wide" [(ngModel)]="obsidianProjectsFolder" placeholder="Where project subfolders will be created" />
+                    <button type="button" class="btn secondary" (click)="browseProjectsFolder()">Browse…</button>
+                  </div>
+                </label>
+                <div class="check-row">
+                  <label class="check">
+                    <input type="checkbox" [(ngModel)]="obsidianAutoCreate" [disabled]="!obsidianProjectsFolder.trim()" />
+                    Auto-create folders &amp; notes
+                  </label>
+                  <p class="hint">Creating a project makes a subfolder; creating a task creates a <code>.md</code> note and links it automatically.</p>
+                </div>
+              </div>
+            }
+          </div>
+
+          <!-- Placeholder for future plugins -->
+          <p class="more-plugins-hint muted">More add-ons coming soon.</p>
+        }
+
+        <!-- REMINDERS ────────────────────────────────────────────────────── -->
+        @if (activeTab === 'reminders') {
+          <h2 class="tab-title">Reminders</h2>
+          <section class="section">
+            <div class="check-row">
+              <label class="check">
+                <input type="checkbox" [(ngModel)]="reminderEnabled" />
+                Time log reminder (popup on a schedule)
+              </label>
+            </div>
+            <label class="field tight">
+              <span class="field-label">Cron schedule <span class="muted">(6 fields: second minute hour day month weekday)</span></span>
+              <input type="text" class="input wide mono" [(ngModel)]="reminderCron" placeholder="0 0 9,12,17 * * *" spellcheck="false" />
+            </label>
+            <p class="hint">
+              Examples: <code>0 0 9 * * *</code> daily at 09:00 &nbsp;·&nbsp;
+              <code>0 0 */2 * * *</code> every two hours &nbsp;·&nbsp;
+              <code>0 0 17 * * 1-5</code> weekdays at 17:00.
+            </p>
+          </section>
+        }
+
+        <!-- BACKUP ───────────────────────────────────────────────────────── -->
+        @if (activeTab === 'backup') {
+          <h2 class="tab-title">Backup</h2>
+          <section class="section">
+            <div class="check-row">
+              <label class="check">
+                <input type="checkbox" [(ngModel)]="backupEnabled" />
+                Enable automatic backup
+              </label>
+              <p class="hint">A copy of your database is created on startup if the chosen interval has passed.</p>
+            </div>
+
+            @if (backupEnabled) {
+              <div class="field">
+                <span class="field-label">Frequency</span>
+                <select class="input" [(ngModel)]="backupFrequency">
+                  @for (opt of backupFrequencyOptions; track opt.value) {
+                    <option [value]="opt.value">{{ opt.label }}</option>
+                  }
+                </select>
+              </div>
+              <label class="field">
+                <span class="field-label">Backup folder</span>
+                <div class="path-row">
+                  <input type="text" class="input wide" [(ngModel)]="backupPath" placeholder="Folder where backup files will be saved" />
+                  <button type="button" class="btn secondary" (click)="browseBackupPath()">Browse…</button>
+                </div>
+              </label>
+            }
+
+            <div class="field">
+              <button type="button" class="btn secondary" (click)="runBackup()" [disabled]="!backupPath.trim()">Backup now</button>
+              @if (backupMessage) {
+                <p class="ok tight">{{ backupMessage }}</p>
+              }
+            </div>
+          </section>
+
+          <section class="section">
+            <h3 class="section-label">Import backup</h3>
+            <p class="hint">Select a <code>.db</code> backup file to restore. Current data will be replaced immediately.</p>
+            <div class="path-row">
+              <input type="text" class="input wide" [value]="importBackupPath" placeholder="Select a backup file…" readonly />
+              <button type="button" class="btn secondary" (click)="browseImportFile()">Browse…</button>
+            </div>
+            @if (importBackupPath) {
+              <button
+                type="button"
+                class="btn danger"
+                (click)="restoreFromBackup()"
+                [disabled]="importRestoring"
+              >
+                {{ importRestoring ? 'Restoring…' : 'Restore backup' }}
+              </button>
+            }
+            @if (importMessage) {
+              <p class="ok tight">{{ importMessage }}</p>
+            }
+          </section>
+        }
+
+        <!-- ── Footer ── -->
+        <div class="dialog-footer">
+          <button type="button" class="btn primary" (click)="save()">Save settings</button>
+          @if (message) { <p class="ok">{{ message }}</p> }
+        </div>
+
+      </div>
+    </div>
+  </div>
+}

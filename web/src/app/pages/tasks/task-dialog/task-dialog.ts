@@ -51,7 +51,7 @@ export class TaskDialogComponent implements OnInit, OnChanges {
 
   ngOnInit(): void {
     void this.tauri.getSettings().then((s) => {
-      this.obsidianConfigured = !!s.obsidianVaultPath?.trim();
+      this.obsidianConfigured = (s.obsidianEnabled ?? false) && !!s.obsidianVaultPath?.trim();
       this.cdr.detectChanges();
     });
   }
@@ -167,6 +167,20 @@ export class TaskDialogComponent implements OnInit, OnChanges {
           obsidianInput: obs,
           createNote: forceCreate || undefined,
         });
+
+        // If a note was auto-created, find its URI and offer to open it
+        if (forceCreate) {
+          const noteUri = await this.tauri.findObsidianNote(this.projectId, name);
+          if (noteUri) {
+            this.saved.emit();
+            this.closed.emit();
+            const openNow = confirm(`✅ Nota criada com sucesso!\n\nClica OK para abrir "${name}" no Obsidian.`);
+            if (openNow) {
+              await this.tauri.openObsidianUri(noteUri);
+            }
+            return;
+          }
+        }
       }
       this.saved.emit();
       this.closed.emit();

@@ -94,3 +94,8 @@ th {
   padding: 0.3rem 0.6rem;
   border-top: 1px solid #ccfbf1;
 }
+
+.total-row td {
+  background: #f8fafc;
+  border-top: 2px solid #e2e8f0;
+}

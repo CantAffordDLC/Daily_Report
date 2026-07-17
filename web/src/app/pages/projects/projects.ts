@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, NgZone, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -19,6 +19,7 @@ import { TaskDetailsDialogComponent } from '../hours/task-details-dialog/task-de
 export class ProjectsPage implements OnInit {
   private readonly tauri = inject(TauriService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly zone = inject(NgZone);
 
   allProjects: ProjectRow[] = [];
   /** Project IDs that have at least one task with hours this month. */
@@ -29,9 +30,17 @@ export class ProjectsPage implements OnInit {
   loading = false;
   error: string | null = null;
 
+  todayHours = 0;
+  obsidianEnabled = false;
+
   readonly currentYearMonth: string = (() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  })();
+
+  readonly today: string = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   })();
 
   renamingProjectId: number | null = null;
@@ -54,10 +63,12 @@ export class ProjectsPage implements OnInit {
     this.loading = true;
     this.error = null;
     try {
-      const [projects, logs, tasks] = await Promise.all([
+      const [projects, logs, tasks, todayLogs, settings] = await Promise.all([
         this.tauri.listProjects(),
         this.tauri.getMonthlyHourLogs(new Date().getFullYear()),
         this.tauri.listAllTasks(),
+        this.tauri.getDailyHourLogs(this.today),
+        this.tauri.getSettings(),
       ]);
       this.allProjects = projects;
       this.allTasks = tasks;
@@ -66,6 +77,8 @@ export class ProjectsPage implements OnInit {
           .filter((r) => r.yearMonth === this.currentYearMonth)
           .map((r) => r.projectId),
       );
+      this.todayHours = todayLogs.reduce((s, r) => s + r.totalHours, 0);
+      this.obsidianEnabled = (settings.obsidianEnabled ?? false) && !!settings.obsidianVaultPath?.trim();
     } catch (e) {
       this.error = String(e);
     } finally {
@@ -197,6 +210,8 @@ export class ProjectsPage implements OnInit {
   openAddTaskPopup(): void {
     this.editingTaskForDialog = null;
     this.taskFormOpen = true;
+    this.cdr.detectChanges();
+    void this.refresh();
   }
 
   openEditTaskPopup(t: TaskRow): void {
@@ -225,6 +240,12 @@ export class ProjectsPage implements OnInit {
     void this.refresh();
   }
 
+  onNewTaskSaved(): void {
+    void this.loadTasks();
+    this.cdr.detectChanges();
+    void this.refresh();
+  }
+
   onTaskDialogClosed(): void {
     this.taskFormOpen = false;
     this.editingTaskForDialog = null;
@@ -246,15 +267,24 @@ export class ProjectsPage implements OnInit {
     if (!this.activeProject) return;
     this.tasksLoading = true;
     try {
-      [this.tasks, this.allTasks] = await Promise.all([
+      const [tasks, allTasks] = await Promise.all([
         this.tauri.listTasksByProject(this.activeProject.id),
         this.tauri.listAllTasks(),
       ]);
+      // Wrap inside zone.run() so Angular's change detection reliably picks up
+      // the new data even when the Tauri IPC callback resolves outside the zone.
+      this.zone.run(() => {
+        this.tasks = tasks;
+        this.allTasks = allTasks;
+        this.tasksLoading = false;
+        this.cdr.detectChanges();
+      });
     } catch (e) {
+      this.zone.run(() => {
+        this.tasksLoading = false;
+        this.cdr.detectChanges();
+      });
       alert(String(e));
-    } finally {
-      this.tasksLoading = false;
-      this.cdr.detectChanges();
     }
   }
 

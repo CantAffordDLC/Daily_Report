@@ -119,6 +119,15 @@ pub struct MonthlyHourRow {
     pub total_hours: f64,
 }
 
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct DailyHourRow {
+    pub date: String,
+    pub project_id: i64,
+    pub project_name: String,
+    pub total_hours: f64,
+}
+
 pub fn list_projects(conn: &Connection) -> Result<Vec<ProjectRow>, rusqlite::Error> {
     let mut stmt = conn.prepare(
         "SELECT id, name, created_at FROM projects ORDER BY name COLLATE NOCASE",
@@ -479,57 +488,102 @@ pub fn tasks_for_export_all_months(
     Ok(all)
 }
 
+pub fn daily_hour_logs(
+    conn: &Connection,
+    date: Option<&str>,
+) -> Result<Vec<DailyHourRow>, rusqlite::Error> {
+    let (date_filter, date_param) = match date {
+        Some(d) => ("AND hl.logged_date = ?1", d.to_string()),
+        None => ("", String::new()),
+    };
+    let sql = format!(
+        "SELECT hl.logged_date, hl.project_id, p.name AS project_name, SUM(hl.hours) AS total_hours
+         FROM hour_logs hl
+         JOIN projects p ON p.id = hl.project_id
+         WHERE 1=1 {date_filter}
+         GROUP BY hl.logged_date, hl.project_id
+         ORDER BY hl.logged_date DESC, p.name COLLATE NOCASE",
+        date_filter = date_filter,
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let map_row = |r: &rusqlite::Row<'_>| {
+        Ok(DailyHourRow {
+            date: r.get(0)?,
+            project_id: r.get(1)?,
+            project_name: r.get(2)?,
+            total_hours: r.get(3)?,
+        })
+    };
+    let out: Vec<DailyHourRow> = if date.is_some() {
+        stmt.query_map(params![date_param], map_row)?
+            .collect::<Result<_, _>>()?
+    } else {
+        stmt.query_map([], map_row)?
+            .collect::<Result<_, _>>()?
+    };
+    Ok(out)
+}
+
 pub fn monthly_hour_logs(
     conn: &Connection,
     year: Option<i32>,
 ) -> Result<Vec<MonthlyHourRow>, rusqlite::Error> {
-    // Group by the actual logged_date from hour_logs (not task_date),
-    // so months reflect when work was done, not when the task was created.
-    match year {
-        Some(y) => {
-            let mut stmt = conn.prepare(
-                "SELECT strftime('%Y-%m', hl.logged_date) AS ym, hl.project_id, p.name,
-                        SUM(hl.hours) AS th
-                 FROM hour_logs hl JOIN projects p ON p.id = hl.project_id
-                 WHERE strftime('%Y', hl.logged_date) = ?1
-                 GROUP BY ym, hl.project_id
-                 ORDER BY ym DESC, p.name COLLATE NOCASE",
-            )?;
-            let iter = stmt.query_map(params![format!("{:04}", y)], |r| {
-                Ok(MonthlyHourRow {
-                    year_month: r.get(0)?,
-                    project_id: r.get(1)?,
-                    project_name: r.get(2)?,
-                    total_hours: r.get(3)?,
-                })
-            })?;
-            let mut out = Vec::new();
-            for row in iter {
-                out.push(row?);
-            }
-            Ok(out)
-        }
-        None => {
-            let mut stmt = conn.prepare(
-                "SELECT strftime('%Y-%m', hl.logged_date) AS ym, hl.project_id, p.name,
-                        SUM(hl.hours) AS th
-                 FROM hour_logs hl JOIN projects p ON p.id = hl.project_id
-                 GROUP BY ym, hl.project_id
-                 ORDER BY ym DESC, p.name COLLATE NOCASE",
-            )?;
-            let iter = stmt.query_map([], |r| {
-                Ok(MonthlyHourRow {
-                    year_month: r.get(0)?,
-                    project_id: r.get(1)?,
-                    project_name: r.get(2)?,
-                    total_hours: r.get(3)?,
-                })
-            })?;
-            let mut out = Vec::new();
-            for row in iter {
-                out.push(row?);
-            }
-            Ok(out)
-        }
-    }
+    // Combines:
+    //   1) hour_logs entries (logged_date = when work was actually recorded)
+    //   2) Legacy tasks that have time_hours > 0 but NO hour_log entries (pre-migration data)
+    // This way both old and new data appear correctly.
+    let (year_filter_logs, year_filter_tasks, year_param) = match year {
+        Some(y) => (
+            "AND strftime('%Y', hl.logged_date) = ?1",
+            "AND strftime('%Y', t.task_date) = ?1",
+            format!("{:04}", y),
+        ),
+        None => ("", "", String::new()),
+    };
+
+    let sql = format!(
+        "SELECT ym, project_id, project_name, SUM(th) AS total_hours
+         FROM (
+             SELECT strftime('%Y-%m', hl.logged_date) AS ym,
+                    hl.project_id,
+                    p.name AS project_name,
+                    SUM(hl.hours) AS th
+             FROM hour_logs hl
+             JOIN projects p ON p.id = hl.project_id
+             WHERE 1=1 {year_filter_logs}
+             GROUP BY ym, hl.project_id
+             UNION ALL
+             SELECT strftime('%Y-%m', t.task_date) AS ym,
+                    t.project_id,
+                    p.name AS project_name,
+                    t.time_hours AS th
+             FROM tasks t
+             JOIN projects p ON p.id = t.project_id
+             WHERE t.time_hours > 0
+               AND t.id NOT IN (SELECT DISTINCT task_id FROM hour_logs)
+               {year_filter_tasks}
+         )
+         GROUP BY ym, project_id
+         ORDER BY ym DESC, project_name COLLATE NOCASE",
+        year_filter_logs = year_filter_logs,
+        year_filter_tasks = year_filter_tasks,
+    );
+
+    let mut stmt = conn.prepare(&sql)?;
+    let map_row = |r: &rusqlite::Row<'_>| {
+        Ok(MonthlyHourRow {
+            year_month: r.get(0)?,
+            project_id: r.get(1)?,
+            project_name: r.get(2)?,
+            total_hours: r.get(3)?,
+        })
+    };
+    let out: Vec<MonthlyHourRow> = if year.is_some() {
+        stmt.query_map(params![year_param], map_row)?
+            .collect::<Result<_, _>>()?
+    } else {
+        stmt.query_map([], map_row)?
+            .collect::<Result<_, _>>()?
+    };
+    Ok(out)
 }

@@ -49,6 +49,23 @@
   color: #0f766e;
 }
 
+.nav-btn {
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font: inherit;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.nav-btn:hover {
+  background: #f1f5f9;
+  color: #0f766e;
+}
+
 .main {
   flex: 1;
 }

@@ -1,6 +1,12 @@
 <div class="page">
   <header class="page-header">
-    <h1>Projects</h1>
+    <div class="header-top">
+      <h1>Projects</h1>
+      <div class="today-badge" title="Hours logged today ({{ today }})">
+        <span class="today-label">Today</span>
+        <span class="today-hours">{{ todayHours | number: '1.0-2' }} h</span>
+      </div>
+    </div>
     <p class="muted">Open a project to view and add tasks. Link tasks to notes on your machine.</p>
   </header>
 
@@ -128,10 +134,10 @@
                       }
                     </td>
                     <td class="actions">
-                      @if (t.obsidianUri) {
-                        <button type="button" class="btn obsidian-open" (click)="openObsidian(t.obsidianUri)" [title]="noteLabel(t)">Open</button>
+                      <button type="button" class="btn primary" (click)="openEditTaskPopup(t)">Add</button>
+                      @if (t.obsidianUri && obsidianEnabled) {
+                        <button type="button" class="btn ghost" (click)="openObsidian(t.obsidianUri)" [title]="noteLabel(t)">Open</button>
                       }
-                      <button type="button" class="btn ghost" (click)="openEditTaskPopup(t)">Edit</button>
                       <button type="button" class="btn danger ghost" (click)="deleteTask(t)">Delete</button>
                     </td>
                   </tr>
@@ -196,7 +202,7 @@
     [projectId]="activeProject.id"
     [editTask]="editingTaskForDialog"
     (closed)="onTaskDialogClosed()"
-    (saved)="loadTasks()"
+    (saved)="onNewTaskSaved()"
   />
 
   <app-task-details-dialog

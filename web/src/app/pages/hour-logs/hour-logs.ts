@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TauriService, MonthlyHourRow } from '../../core/tauri.service';
+import { TauriService, MonthlyHourRow, DailyHourRow } from '../../core/tauri.service';
 
 @Component({
   selector: 'app-hour-logs',
@@ -16,6 +16,7 @@ export class HourLogsPage implements OnInit {
 
   logsYear: number | '' = '';
   logsMonth = '';
+  logsDay = '';   // YYYY-MM-DD — picking a date auto-fills year+month
   yearChoices: number[] = [];
   readonly monthChoices = [
     { value: '01', label: 'Janeiro' },
@@ -36,15 +37,35 @@ export class HourLogsPage implements OnInit {
   monthTotals: { month: string; hours: number }[] = [];
   logsLoading = false;
 
+  filteredLogRows: MonthlyHourRow[] = [];
+  filteredMonthTotals: { month: string; hours: number }[] = [];
+  groupedLogRows: { month: string; rows: MonthlyHourRow[] }[] = [];
+
+  // Daily breakdown (shown when a specific date is selected)
+  dailyRows: DailyHourRow[] = [];
+  dailyTotal = 0;
+
   ngOnInit(): void {
     const y = new Date().getFullYear();
     for (let i = 0; i < 6; i++) this.yearChoices.push(y - i);
     void this.refreshLogs();
   }
 
-  filteredLogRows: MonthlyHourRow[] = [];
-  filteredMonthTotals: { month: string; hours: number }[] = [];
-  groupedLogRows: { month: string; rows: MonthlyHourRow[] }[] = [];
+  /** When the user picks a specific date, sync year+month selects. */
+  onDayChange(): void {
+    if (this.logsDay) {
+      const [y, m] = this.logsDay.split('-');
+      this.logsYear = Number(y);
+      this.logsMonth = m;
+    }
+    void this.refreshLogs();
+  }
+
+  /** Clearing year/month also clears the day picker. */
+  onYearOrMonthChange(): void {
+    this.logsDay = '';
+    void this.refreshLogs();
+  }
 
   applyFilters(): void {
     this.filteredLogRows = this.logsMonth
@@ -72,7 +93,14 @@ export class HourLogsPage implements OnInit {
         this.logsYear === '' || this.logsYear === null
           ? null
           : Number(this.logsYear);
-      this.logRows = await this.tauri.getMonthlyHourLogs(year);
+      const [monthly, daily] = await Promise.all([
+        this.tauri.getMonthlyHourLogs(year),
+        this.tauri.getDailyHourLogs(this.logsDay || null),
+      ]);
+      this.logRows = monthly;
+      this.dailyRows = daily;
+      this.dailyTotal = daily.reduce((s, r) => s + r.totalHours, 0);
+
       const byMonth: Record<string, number> = {};
       for (const r of this.logRows) {
         byMonth[r.yearMonth] = (byMonth[r.yearMonth] || 0) + r.totalHours;
@@ -86,6 +114,8 @@ export class HourLogsPage implements OnInit {
       console.error(e);
       this.logRows = [];
       this.monthTotals = [];
+      this.dailyRows = [];
+      this.dailyTotal = 0;
     } finally {
       this.logsLoading = false;
       this.cdr.detectChanges();

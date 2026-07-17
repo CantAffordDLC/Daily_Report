@@ -29,6 +29,26 @@ export class HoursPage implements OnInit {
   error: string | null = null;
 
   searchQuery = '';
+  filterYear: number | '' = '';
+  filterMonth = '';
+  filterDay = '';   // full date YYYY-MM-DD; picking auto-fills year+month
+
+  yearChoices: number[] = [];
+  readonly monthChoices = [
+    { value: '01', label: 'Janeiro' },
+    { value: '02', label: 'Fevereiro' },
+    { value: '03', label: 'Março' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Maio' },
+    { value: '06', label: 'Junho' },
+    { value: '07', label: 'Julho' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Setembro' },
+    { value: '10', label: 'Outubro' },
+    { value: '11', label: 'Novembro' },
+    { value: '12', label: 'Dezembro' },
+  ];
+
   private collapsedProjectIds = new Set<number>();
   hourDraft: Record<number, number | null> = {};
   savingAll = false;
@@ -47,7 +67,25 @@ export class HoursPage implements OnInit {
   }
 
   ngOnInit(): void {
+    const y = new Date().getFullYear();
+    for (let i = 0; i < 6; i++) this.yearChoices.push(y - i);
     void this.refresh();
+  }
+
+  /** Picking a specific date auto-fills year + month. */
+  onDayChange(): void {
+    if (this.filterDay) {
+      const [y, m] = this.filterDay.split('-');
+      this.filterYear = Number(y);
+      this.filterMonth = m;
+    }
+    this.cdr.detectChanges();
+  }
+
+  /** Clearing year/month also clears the day picker. */
+  onYearOrMonthChange(): void {
+    this.filterDay = '';
+    this.cdr.detectChanges();
   }
 
   async refresh(): Promise<void> {
@@ -79,6 +117,15 @@ export class HoursPage implements OnInit {
     return this.searchQuery.trim().toLowerCase();
   }
 
+  private taskMatchesDate(t: TaskRow): boolean {
+    if (this.filterDay) return t.taskDate === this.filterDay;
+    if (this.filterMonth && this.filterYear !== '')
+      return t.taskDate.startsWith(`${this.filterYear}-${this.filterMonth}`);
+    if (this.filterMonth) return t.taskDate.slice(5, 7) === this.filterMonth;
+    if (this.filterYear !== '') return t.taskDate.startsWith(String(this.filterYear));
+    return true;
+  }
+
   taskMatchesSearch(t: TaskRow, q: string, projectName: string): boolean {
     if (!q) return true;
     const hay = [
@@ -97,11 +144,12 @@ export class HoursPage implements OnInit {
     const q = this.normalizedSearch();
     const out: ProjectTasks[] = [];
     for (const g of this.groups) {
-      const tasks = q
-        ? g.tasks.filter((t) => this.taskMatchesSearch(t, q, g.project.name))
-        : g.tasks;
-      if (!q && tasks.length === 0) {
-        out.push({ project: g.project, tasks: [] });
+      const tasks = g.tasks.filter(
+        (t) => this.taskMatchesDate(t) && this.taskMatchesSearch(t, q, g.project.name),
+      );
+      // Show project row even when empty (if no date filter) so user can see all projects
+      if (!q && !this.filterDay && !this.filterMonth && this.filterYear === '') {
+        out.push({ project: g.project, tasks: g.tasks });
         continue;
       }
       if (tasks.length === 0) continue;

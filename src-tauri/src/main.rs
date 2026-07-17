@@ -6,7 +6,7 @@ mod settings;
 
 use chrono::{Datelike, Local};
 use cron::Schedule;
-use db::{HourLogRow, MonthlyHourRow, ProjectRow, TaskRow};
+use db::{DailyHourRow, HourLogRow, MonthlyHourRow, ProjectRow, TaskRow};
 use rust_xlsxwriter::{Format, Workbook};
 use settings::AppSettings;
 use std::fs;
@@ -95,6 +95,7 @@ fn create_project(state: State<AppState>, name: String) -> Result<i64, String> {
         };
         let folder = root.join(sanitize_filename(name.trim()));
         let _ = fs::create_dir_all(&folder);
+        create_folder_note(&folder, name.trim());
     }
     Ok(id)
 }
@@ -159,6 +160,51 @@ fn list_tasks_by_project(state: State<AppState>, project_id: i64) -> Result<Vec<
     Ok(tasks)
 }
 
+/// Creates `{folder}/{ProjectName}.md` as a folder-note with an icon in frontmatter.
+fn create_folder_note(folder: &Path, project_name: &str) {
+    let note = folder.join(format!("{}.md", sanitize_filename(project_name)));
+    if note.exists() {
+        return;
+    }
+    let today = Local::now().format("%Y-%m-%d").to_string();
+    let content = format!(
+        "---\ntitle: {name}\ntype: project\nicon: \"📋\"\ncreated: {today}\n---\n\n# {name}\n\n",
+        name = project_name,
+        today = today,
+    );
+    let _ = fs::write(&note, content);
+}
+
+/// Returns the next sequential note number for the given project folder.
+/// Counts `.md` files whose name matches `{digits} - *.md` and returns max+1.
+fn next_note_number(folder: &Path) -> usize {
+    if !folder.is_dir() {
+        return 1;
+    }
+    let max = fs::read_dir(folder)
+        .map(|entries| {
+            entries
+                .filter_map(|e| e.ok())
+                .filter_map(|e| {
+                    let raw = e.file_name();
+                    let n = raw.to_string_lossy();
+                    if !n.ends_with(".md") {
+                        return None;
+                    }
+                    // Match "N - rest.md" or "N- rest.md"
+                    let digits: String = n.chars().take_while(|c| c.is_ascii_digit()).collect();
+                    if digits.is_empty() {
+                        return None;
+                    }
+                    digits.parse::<usize>().ok()
+                })
+                .max()
+                .unwrap_or(0)
+        })
+        .unwrap_or(0);
+    max + 1
+}
+
 #[tauri::command]
 fn find_obsidian_note(
     state: State<AppState>,
@@ -179,12 +225,37 @@ fn find_obsidian_note(
     let Some(project) = projects.iter().find(|p| p.id == project_id) else {
         return Ok(None);
     };
-    let note_path = root
-        .join(sanitize_filename(&project.name))
-        .join(format!("{}.md", sanitize_filename(task_name.trim())));
-    if !note_path.exists() {
+    let folder = root.join(sanitize_filename(&project.name));
+    let sanitized_name = sanitize_filename(task_name.trim());
+
+    // Look for either the exact name or a numbered variant ("N - Name.md")
+    let found_path = if folder.is_dir() {
+        let exact = folder.join(format!("{}.md", sanitized_name));
+        if exact.exists() {
+            Some(exact)
+        } else {
+            // Search for "N - Name.md"
+            fs::read_dir(&folder)
+                .ok()
+                .and_then(|entries| {
+                    entries
+                        .filter_map(|e| e.ok())
+                        .find(|e| {
+                            let raw = e.file_name();
+                            let n = raw.to_string_lossy();
+                            n.ends_with(".md")
+                                && n.contains(&format!(" - {}.md", sanitized_name))
+                        })
+                        .map(|e| e.path())
+                })
+        }
+    } else {
+        None
+    };
+
+    let Some(note_path) = found_path else {
         return Ok(None);
-    }
+    };
     let abs = fs::canonicalize(&note_path).unwrap_or(note_path);
     let abs_str = abs.to_string_lossy();
     let clean = abs_str.strip_prefix(r"\\?\").unwrap_or(&abs_str);
@@ -223,13 +294,18 @@ fn create_task(
                 };
                 let folder = root.join(sanitize_filename(&project.name));
                 let _ = fs::create_dir_all(&folder);
-                let note_path = folder.join(format!("{}.md", sanitize_filename(description.trim())));
+                // Ensure the project folder note exists
+                create_folder_note(&folder, &project.name);
+                // Determine numbered prefix (e.g. "3 - TaskName.md")
+                let num = next_note_number(&folder);
+                let note_filename = format!("{} - {}.md", num, sanitize_filename(description.trim()));
+                let note_path = folder.join(&note_filename);
                 if !note_path.exists() {
                     let content = format!(
-                        "# {}\n\n**Project:** {}\n**Date:** {}\n\n## Notes\n\n",
-                        description.trim(),
-                        project.name,
-                        task_date
+                        "---\ntitle: \"{title}\"\nproject: \"{project}\"\ndate: {date}\ntype: task\nstatus: in-progress\n---\n\n# {title}\n\n## Questions ❓\n\n## Notas 💡\n\n## No Final 🔚\n",
+                        title = description.trim(),
+                        project = project.name,
+                        date = task_date,
                     );
                     let _ = fs::write(&note_path, content);
                 }
@@ -391,6 +467,15 @@ fn get_monthly_hour_logs(
 }
 
 #[tauri::command]
+fn get_daily_hour_logs(
+    state: State<AppState>,
+    date: Option<String>,
+) -> Result<Vec<DailyHourRow>, String> {
+    let conn = state.db.lock().map_err(|e| e.to_string())?;
+    db::daily_hour_logs(&conn, date.as_deref()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn open_obsidian_uri(uri: String) -> Result<(), String> {
     let u = uri.trim();
     if u.is_empty() {
@@ -411,6 +496,45 @@ fn pick_markdown_file() -> Result<Option<String>, String> {
 fn pick_folder() -> Result<Option<String>, String> {
     let path = FileDialogBuilder::new().pick_folder();
     Ok(path.map(|p| p.to_string_lossy().into_owned()))
+}
+
+#[tauri::command]
+fn pick_backup_file() -> Result<Option<String>, String> {
+    let path = FileDialogBuilder::new()
+        .add_filter("Database backup", &["db", "sqlite"])
+        .pick_file();
+    Ok(path.map(|p| p.to_string_lossy().into_owned()))
+}
+
+#[tauri::command]
+fn restore_backup(state: State<AppState>, backup_path: String) -> Result<(), String> {
+    let backup_path = backup_path.trim().to_string();
+    if backup_path.is_empty() {
+        return Err("No backup path provided".into());
+    }
+    // Validate: open backup and check it is a valid SQLite database
+    let test = rusqlite::Connection::open(&backup_path)
+        .map_err(|e| format!("Cannot open backup file: {e}"))?;
+    test.query_row("SELECT count(*) FROM sqlite_master", [], |r| r.get::<_, i64>(0))
+        .map_err(|e| format!("Not a valid database: {e}"))?;
+    drop(test);
+
+    let db_path = state.data_dir.join("daily_report.db");
+
+    // Hold the lock for the entire operation so no other command can use the DB
+    let mut conn_guard = state.db.lock().map_err(|e| e.to_string())?;
+
+    // Flush WAL before copy
+    let _ = conn_guard.execute_batch("PRAGMA wal_checkpoint(FULL)");
+
+    // Replace current DB file with the backup
+    fs::copy(&backup_path, &db_path).map_err(|e| format!("Copy failed: {e}"))?;
+
+    // Reopen and replace the connection in the shared state
+    let new_conn = db::open_and_init(&db_path).map_err(|e| e.to_string())?;
+    *conn_guard = new_conn;
+
+    Ok(())
 }
 
 #[tauri::command]
@@ -624,11 +748,14 @@ fn main() {
             delete_task,
             export_tasks_xlsx,
             get_monthly_hour_logs,
+            get_daily_hour_logs,
             open_obsidian_uri,
             pick_markdown_file,
             pick_folder,
+            pick_backup_file,
             find_obsidian_note,
             create_backup,
+            restore_backup,
             add_hour_log,
             list_hour_logs_for_task,
             delete_hour_log,

@@ -41,9 +41,17 @@ export interface MonthlyHourRow {
   totalHours: number;
 }
 
+export interface DailyHourRow {
+  date: string;
+  projectId: number;
+  projectName: string;
+  totalHours: number;
+}
+
 export interface AppSettings {
   exportPath: string;
   defaultObsidianVault: string;
+  obsidianEnabled: boolean;
   obsidianVaultPath: string;
   obsidianProjectsFolder: string;
   obsidianAutoCreate: boolean;
@@ -214,6 +222,10 @@ export class TauriService {
     return this.invokeCmd<MonthlyHourRow[]>('get_monthly_hour_logs', { year });
   }
 
+  getDailyHourLogs(date: string | null): Promise<DailyHourRow[]> {
+    return this.invokeCmd<DailyHourRow[]>('get_daily_hour_logs', { date });
+  }
+
   addHourLog(taskId: number, projectId: number, loggedDate: string, hours: number): Promise<void> {
     return this.invokeCmd('add_hour_log', { taskId, projectId, loggedDate, hours });
   }
@@ -228,5 +240,13 @@ export class TauriService {
 
   createBackup(): Promise<string> {
     return this.invokeCmd<string>('create_backup');
+  }
+
+  pickBackupFile(): Promise<string | null> {
+    return this.invokeCmd<string | null>('pick_backup_file');
+  }
+
+  restoreBackup(backupPath: string): Promise<void> {
+    return this.invokeCmd('restore_backup', { backupPath });
   }
 }

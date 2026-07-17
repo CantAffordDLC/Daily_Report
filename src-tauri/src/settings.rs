@@ -9,6 +9,8 @@ pub struct AppSettings {
     pub export_path: String,
     pub default_obsidian_vault: String,
     #[serde(default)]
+    pub obsidian_enabled: bool,
+    #[serde(default)]
     pub obsidian_vault_path: String,
     #[serde(default)]
     pub obsidian_projects_folder: String,
@@ -49,6 +51,7 @@ impl Default for AppSettings {
         Self {
             export_path,
             default_obsidian_vault: String::new(),
+            obsidian_enabled: false,
             obsidian_vault_path: String::new(),
             obsidian_projects_folder: String::new(),
             obsidian_auto_create: false,

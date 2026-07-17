@@ -18,6 +18,19 @@
       placeholder="Search by task name, date, project..."
       [(ngModel)]="searchQuery"
     />
+    <select class="input filter-select" [(ngModel)]="filterYear" (ngModelChange)="onYearOrMonthChange()">
+      <option [ngValue]="''">All years</option>
+      @for (y of yearChoices; track y) {
+        <option [ngValue]="y">{{ y }}</option>
+      }
+    </select>
+    <select class="input filter-select" [(ngModel)]="filterMonth" (ngModelChange)="onYearOrMonthChange()">
+      <option value="">All months</option>
+      @for (m of monthChoices; track m.value) {
+        <option [value]="m.value">{{ m.label }}</option>
+      }
+    </select>
+    <input type="date" class="input filter-date" [(ngModel)]="filterDay" (ngModelChange)="onDayChange()" title="Filter to a specific day" />
     <button type="button" class="btn secondary" (click)="expandAll()">Expand all</button>
     <button type="button" class="btn secondary" (click)="collapseAll()">Collapse all</button>
     <button type="button" class="btn ghost" (click)="refresh()" [disabled]="loading">Refresh</button>

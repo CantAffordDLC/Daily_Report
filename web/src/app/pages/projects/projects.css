@@ -9,6 +9,46 @@
   font-size: 1.75rem;
 }
 
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.35rem;
+}
+
+.header-top h1 {
+  margin: 0;
+  flex: 1 1 auto;
+}
+
+.today-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  border-radius: 12px;
+  padding: 0.35rem 0.9rem;
+  min-width: 5rem;
+  cursor: default;
+}
+
+.today-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0f766e;
+}
+
+.today-hours {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0f766e;
+  line-height: 1.1;
+}
+
 .muted {
   color: #64748b;
 }
@@ -374,11 +414,3 @@ td.actions {
   color: #1e40af;
 }
 
-.btn.obsidian-open {
-  background: #0f766e;
-  color: #fff;
-}
-
-.btn.obsidian-open:hover {
-  background: #0d6460;
-}
