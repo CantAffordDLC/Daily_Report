@@ -6,7 +6,7 @@ mod settings;
 
 use chrono::{Datelike, Local};
 use cron::Schedule;
-use db::{DailyHourRow, HourLogRow, MonthlyHourRow, ProjectRow, TaskRow};
+use db::{DailyHourRow, ExportTaskRow, HourLogRow, MonthlyHourRow, ProjectRow, TaskRow};
 use rust_xlsxwriter::{Format, Workbook};
 use settings::AppSettings;
 use std::fs;
@@ -403,7 +403,7 @@ fn export_tasks_xlsx(state: State<AppState>, months: Vec<String>) -> Result<Stri
 
     let tasks = {
         let conn = state.db.lock().map_err(|e| e.to_string())?;
-        db::tasks_for_export_all_months(&conn, &months_sorted).map_err(|e| e.to_string())?
+        db::tasks_for_export_with_projects(&conn, &months_sorted).map_err(|e| e.to_string())?
     };
 
     if tasks.is_empty() {
@@ -426,32 +426,126 @@ fn months_suffix(months: &[String]) -> String {
     }
 }
 
-fn write_tasks_xlsx(path: &Path, tasks: &[TaskRow]) -> Result<(), rust_xlsxwriter::XlsxError> {
+fn write_tasks_xlsx(path: &Path, tasks: &[ExportTaskRow]) -> Result<(), rust_xlsxwriter::XlsxError> {
+    use rust_xlsxwriter::Color;
+    use std::collections::HashMap;
+
     let mut workbook = Workbook::new();
-    let sheet = workbook.add_worksheet();
-    let bold = Format::new().set_bold();
 
-    sheet.write_string_with_format(0, 0, "Date", &bold)?;
-    sheet.write_string_with_format(0, 1, "Day Type", &bold)?;
-    sheet.write_string_with_format(0, 2, "Description", &bold)?;
-    sheet.write_string_with_format(0, 3, "Time (hours)", &bold)?;
-    sheet.write_string_with_format(0, 4, "Obsidian link", &bold)?;
+    let bold     = Format::new().set_bold();
+    let num_fmt  = Format::new().set_num_format("0.00");
+    let bold_num = Format::new().set_bold().set_num_format("0.00");
+    let header   = Format::new()
+        .set_bold()
+        .set_background_color(Color::RGB(0x2D5F8A))
+        .set_font_color(Color::RGB(0xFFFFFF));
 
-    for (i, t) in tasks.iter().enumerate() {
-        let row = (i + 1) as u32;
-        sheet.write_string(row, 0, &t.task_date)?;
-        sheet.write_string(row, 1, &t.day_type)?;
-        sheet.write_string(row, 2, &t.description)?;
-        sheet.write_number(row, 3, t.time_hours)?;
-        let obs = t.obsidian_uri.as_deref().unwrap_or("");
-        sheet.write_string(row, 4, obs)?;
+    // ── Sheet 1: Tasks (detail) ────────────────────────────────────────────────
+    {
+        let sheet = workbook.add_worksheet();
+        sheet.set_name("Tasks")?;
+
+        sheet.write_string_with_format(0, 0, "Date",         &header)?;
+        sheet.write_string_with_format(0, 1, "Project",      &header)?;
+        sheet.write_string_with_format(0, 2, "Day Type",     &header)?;
+        sheet.write_string_with_format(0, 3, "Description",  &header)?;
+        sheet.write_string_with_format(0, 4, "Hours",        &header)?;
+        sheet.write_string_with_format(0, 5, "Obsidian link",&header)?;
+
+        for (i, t) in tasks.iter().enumerate() {
+            let row = (i + 1) as u32;
+            sheet.write_string(row, 0, &t.task_date)?;
+            sheet.write_string(row, 1, &t.project_name)?;
+            sheet.write_string(row, 2, &t.day_type)?;
+            sheet.write_string(row, 3, &t.description)?;
+            sheet.write_number_with_format(row, 4, t.time_hours, &num_fmt)?;
+            sheet.write_string(row, 5, t.obsidian_uri.as_deref().unwrap_or(""))?;
+        }
+
+        sheet.set_column_width(0, 12.0)?;
+        sheet.set_column_width(1, 24.0)?;
+        sheet.set_column_width(2, 12.0)?;
+        sheet.set_column_width(3, 44.0)?;
+        sheet.set_column_width(4, 10.0)?;
+        sheet.set_column_width(5, 50.0)?;
     }
 
-    sheet.set_column_width(0, 12.0)?;
-    sheet.set_column_width(1, 12.0)?;
-    sheet.set_column_width(2, 40.0)?;
-    sheet.set_column_width(3, 14.0)?;
-    sheet.set_column_width(4, 50.0)?;
+    // ── Sheet 2: By Project (project × month pivot) ────────────────────────────
+    {
+        // Unique sorted months and projects
+        let mut months_set: Vec<String> = tasks
+            .iter()
+            .map(|t| t.task_date.chars().take(7).collect::<String>())
+            .collect();
+        months_set.sort();
+        months_set.dedup();
+
+        let mut projects_set: Vec<String> = tasks
+            .iter()
+            .map(|t| t.project_name.clone())
+            .collect();
+        projects_set.sort();
+        projects_set.dedup();
+
+        // project → month → total_hours
+        let mut totals: HashMap<String, HashMap<String, f64>> = HashMap::new();
+        for t in tasks {
+            let month: String = t.task_date.chars().take(7).collect();
+            *totals
+                .entry(t.project_name.clone())
+                .or_default()
+                .entry(month)
+                .or_insert(0.0) += t.time_hours;
+        }
+
+        let sheet = workbook.add_worksheet();
+        sheet.set_name("By Project")?;
+
+        // Header row
+        sheet.write_string_with_format(0, 0, "Project", &header)?;
+        for (ci, m) in months_set.iter().enumerate() {
+            sheet.write_string_with_format(0, (ci + 1) as u16, m, &header)?;
+        }
+        let total_col = (months_set.len() + 1) as u16;
+        sheet.write_string_with_format(0, total_col, "Total", &header)?;
+
+        // One row per project
+        for (ri, proj) in projects_set.iter().enumerate() {
+            let row = (ri + 1) as u32;
+            sheet.write_string(row, 0, proj)?;
+            let proj_map = totals.get(proj).cloned().unwrap_or_default();
+            let mut row_total = 0.0_f64;
+            for (ci, m) in months_set.iter().enumerate() {
+                let h = proj_map.get(m).copied().unwrap_or(0.0);
+                if h > 0.0 {
+                    sheet.write_number_with_format(row, (ci + 1) as u16, h, &num_fmt)?;
+                }
+                row_total += h;
+            }
+            sheet.write_number_with_format(row, total_col, row_total, &bold_num)?;
+        }
+
+        // Grand totals row
+        let total_row = (projects_set.len() + 1) as u32;
+        sheet.write_string_with_format(total_row, 0, "TOTAL", &bold)?;
+        for (ci, m) in months_set.iter().enumerate() {
+            let col_total: f64 = projects_set
+                .iter()
+                .map(|p| totals.get(p).and_then(|pm| pm.get(m)).copied().unwrap_or(0.0))
+                .sum();
+            if col_total > 0.0 {
+                sheet.write_number_with_format(total_row, (ci + 1) as u16, col_total, &bold_num)?;
+            }
+        }
+        let grand_total: f64 = tasks.iter().map(|t| t.time_hours).sum();
+        sheet.write_number_with_format(total_row, total_col, grand_total, &bold_num)?;
+
+        // Column widths
+        sheet.set_column_width(0, 28.0)?;
+        for ci in 0..=months_set.len() {
+            sheet.set_column_width((ci + 1) as u16, 12.0)?;
+        }
+    }
 
     workbook.save(path)?;
     Ok(())

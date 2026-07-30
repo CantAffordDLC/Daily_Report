@@ -446,34 +446,46 @@ pub fn delete_hour_log(conn: &Connection, id: i64) -> Result<(), rusqlite::Error
     Ok(())
 }
 
-pub fn tasks_for_export_all_months(
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportTaskRow {
+    pub id: i64,
+    pub project_id: i64,
+    pub project_name: String,
+    pub task_date: String,
+    pub day_type: String,
+    pub description: String,
+    pub time_hours: f64,
+    pub obsidian_uri: Option<String>,
+}
+
+pub fn tasks_for_export_with_projects(
     conn: &Connection,
     months: &[String],
-) -> Result<Vec<TaskRow>, rusqlite::Error> {
+) -> Result<Vec<ExportTaskRow>, rusqlite::Error> {
     if months.is_empty() {
         return Ok(Vec::new());
     }
     let mut all = Vec::new();
     let mut stmt = conn.prepare(
-        "SELECT t.id, t.project_id, t.task_date, t.day_type, t.description, t.time_hours,
-                t.obsidian_uri, MAX(hl.logged_date) AS last_log_date
+        "SELECT t.id, t.project_id, p.name, t.task_date, t.day_type, t.description,
+                t.time_hours, t.obsidian_uri
          FROM tasks t
-         LEFT JOIN hour_logs hl ON hl.task_id = t.id
+         JOIN projects p ON p.id = t.project_id
          WHERE strftime('%Y-%m', t.task_date) = ?1
-         GROUP BY t.id
          ORDER BY t.task_date, t.id",
     )?;
     for m in months {
         let rows = stmt.query_map(params![m], |r| {
-            Ok(TaskRow {
+            Ok(ExportTaskRow {
                 id: r.get(0)?,
                 project_id: r.get(1)?,
-                task_date: r.get(2)?,
-                day_type: r.get(3)?,
-                description: r.get(4)?,
-                time_hours: r.get(5)?,
-                obsidian_uri: r.get(6)?,
-                last_log_date: r.get(7)?,
+                project_name: r.get(2)?,
+                task_date: r.get(3)?,
+                day_type: r.get(4)?,
+                description: r.get(5)?,
+                time_hours: r.get(6)?,
+                obsidian_uri: r.get(7)?,
             })
         })?;
         for row in rows {
