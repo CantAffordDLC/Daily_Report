@@ -618,8 +618,17 @@ fn restore_backup(state: State<AppState>, backup_path: String) -> Result<(), Str
     // Hold the lock for the entire operation so no other command can use the DB
     let mut conn_guard = state.db.lock().map_err(|e| e.to_string())?;
 
-    // Flush WAL before copy
-    let _ = conn_guard.execute_batch("PRAGMA wal_checkpoint(FULL)");
+    // Close the current connection (swap in a throwaway one) so the old WAL/SHM
+    // are not replayed on top of the restored file
+    let _ = conn_guard.execute_batch("PRAGMA wal_checkpoint(TRUNCATE)");
+    let placeholder = rusqlite::Connection::open_in_memory().map_err(|e| e.to_string())?;
+    drop(std::mem::replace(&mut *conn_guard, placeholder));
+    for suffix in ["-wal", "-shm"] {
+        let side = state.data_dir.join(format!("daily_report.db{suffix}"));
+        if side.exists() {
+            fs::remove_file(&side).map_err(|e| format!("Cannot remove {suffix} file: {e}"))?;
+        }
+    }
 
     // Replace current DB file with the backup
     fs::copy(&backup_path, &db_path).map_err(|e| format!("Copy failed: {e}"))?;

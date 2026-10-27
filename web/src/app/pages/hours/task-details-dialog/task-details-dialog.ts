@@ -107,7 +107,7 @@ export class TaskDetailsDialogComponent implements OnChanges {
   }
 
   async deleteLogEntry(logId: number): Promise<void> {
-    if (!confirm('Delete this hour log entry?')) return;
+    if (!await this.tauri.confirm('Delete this hour log entry?')) return;
     try {
       await this.tauri.deleteHourLog(logId);
       await this.loadData(this.task!.id);
@@ -181,7 +181,7 @@ export class TaskDetailsDialogComponent implements OnChanges {
 
   async deleteTask(): Promise<void> {
     if (!this.task) return;
-    if (!confirm(`Delete task "${this.task.description}"? This cannot be undone.`)) return;
+    if (!await this.tauri.confirm(`Delete task "${this.task.description}"? This cannot be undone.`)) return;
     try {
       await this.tauri.deleteTask(this.task.id);
       this.deleted.emit();

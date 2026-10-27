@@ -168,7 +168,7 @@ export class ProjectsPage implements OnInit {
 
   async deleteProject(p: ProjectRow, ev: Event): Promise<void> {
     ev.stopPropagation();
-    if (!confirm(`Delete project "${p.name}" and all its tasks?`)) return;
+    if (!await this.tauri.confirm(`Delete project "${p.name}" and all its tasks?`)) return;
     try {
       await this.tauri.deleteProject(p.id);
       if (this.activeProject?.id === p.id) {
@@ -289,7 +289,7 @@ export class ProjectsPage implements OnInit {
   }
 
   async deleteTask(t: TaskRow): Promise<void> {
-    if (!confirm('Delete this task?')) return;
+    if (!await this.tauri.confirm('Delete this task?')) return;
     try {
       await this.tauri.deleteTask(t.id);
       await this.loadTasks();

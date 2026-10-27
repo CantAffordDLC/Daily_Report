@@ -50,21 +50,27 @@ pub fn open_and_init(db_path: &Path) -> Result<Connection, rusqlite::Error> {
         CREATE INDEX IF NOT EXISTS idx_hour_logs_project_id ON hour_logs(project_id);
         ",
     )?;
-    migrate_obsidian_column(&conn)?;
+    add_column_if_missing(&conn, "tasks", "obsidian_uri", "TEXT")?;
+    // Soft delete: rows are flagged with a timestamp instead of being removed
+    for table in ["projects", "tasks", "hour_logs"] {
+        add_column_if_missing(&conn, table, "deleted_at", "TEXT")?;
+    }
     Ok(conn)
 }
 
-fn migrate_obsidian_column(conn: &Connection) -> Result<(), rusqlite::Error> {
-    let mut stmt = conn.prepare("PRAGMA table_info(tasks)")?;
+fn add_column_if_missing(
+    conn: &Connection,
+    table: &str,
+    column: &str,
+    decl: &str,
+) -> Result<(), rusqlite::Error> {
+    let mut stmt = conn.prepare(&format!("PRAGMA table_info({table})"))?;
     let cols: Vec<String> = stmt
         .query_map([], |r| r.get::<_, String>(1))?
         .filter_map(|x| x.ok())
         .collect();
-    if !cols.iter().any(|c| c == "obsidian_uri") {
-        conn.execute(
-            "ALTER TABLE tasks ADD COLUMN obsidian_uri TEXT",
-            [],
-        )?;
+    if !cols.iter().any(|c| c == column) {
+        conn.execute(&format!("ALTER TABLE {table} ADD COLUMN {column} {decl}"), [])?;
     }
     Ok(())
 }
@@ -130,7 +136,7 @@ pub struct DailyHourRow {
 
 pub fn list_projects(conn: &Connection) -> Result<Vec<ProjectRow>, rusqlite::Error> {
     let mut stmt = conn.prepare(
-        "SELECT id, name, created_at FROM projects ORDER BY name COLLATE NOCASE",
+        "SELECT id, name, created_at FROM projects WHERE deleted_at IS NULL ORDER BY name COLLATE NOCASE",
     )?;
     let rows = stmt
         .query_map([], |r| {
@@ -158,7 +164,7 @@ pub fn create_project(conn: &Connection, name: &str) -> Result<i64, rusqlite::Er
 
 pub fn rename_project(conn: &Connection, id: i64, name: &str) -> Result<(), rusqlite::Error> {
     let n = conn.execute(
-        "UPDATE projects SET name = ?1 WHERE id = ?2",
+        "UPDATE projects SET name = ?1 WHERE id = ?2 AND deleted_at IS NULL",
         params![name.trim(), id],
     )?;
     if n == 0 {
@@ -167,9 +173,24 @@ pub fn rename_project(conn: &Connection, id: i64, name: &str) -> Result<(), rusq
     Ok(())
 }
 
+/// Soft delete: flags the project and its tasks/hour logs with the same `deleted_at`,
+/// so everything removed together can be restored together.
 pub fn delete_project(conn: &Connection, id: i64) -> Result<(), rusqlite::Error> {
-    conn.execute("DELETE FROM projects WHERE id = ?1", params![id])?;
-    Ok(())
+    let now = chrono::Utc::now().to_rfc3339();
+    let tx = conn.unchecked_transaction()?;
+    tx.execute(
+        "UPDATE hour_logs SET deleted_at = ?1 WHERE project_id = ?2 AND deleted_at IS NULL",
+        params![now, id],
+    )?;
+    tx.execute(
+        "UPDATE tasks SET deleted_at = ?1 WHERE project_id = ?2 AND deleted_at IS NULL",
+        params![now, id],
+    )?;
+    tx.execute(
+        "UPDATE projects SET deleted_at = ?1 WHERE id = ?2 AND deleted_at IS NULL",
+        params![now, id],
+    )?;
+    tx.commit()
 }
 
 pub fn list_tasks_for_date(
@@ -181,8 +202,8 @@ pub fn list_tasks_for_date(
         "SELECT t.id, t.project_id, t.task_date, t.day_type, t.description, t.time_hours,
                 t.obsidian_uri, MAX(hl.logged_date) AS last_log_date
          FROM tasks t
-         LEFT JOIN hour_logs hl ON hl.task_id = t.id
-         WHERE t.project_id = ?1 AND t.task_date = ?2
+         LEFT JOIN hour_logs hl ON hl.task_id = t.id AND hl.deleted_at IS NULL
+         WHERE t.project_id = ?1 AND t.task_date = ?2 AND t.deleted_at IS NULL
          GROUP BY t.id
          ORDER BY t.id",
     )?;
@@ -197,8 +218,8 @@ pub fn list_tasks_for_project(
         "SELECT t.id, t.project_id, t.task_date, t.day_type, t.description, t.time_hours,
                 t.obsidian_uri, MAX(hl.logged_date) AS last_log_date
          FROM tasks t
-         LEFT JOIN hour_logs hl ON hl.task_id = t.id
-         WHERE t.project_id = ?1
+         LEFT JOIN hour_logs hl ON hl.task_id = t.id AND hl.deleted_at IS NULL
+         WHERE t.project_id = ?1 AND t.deleted_at IS NULL
          GROUP BY t.id
          ORDER BY COALESCE(MAX(hl.logged_date), t.task_date) DESC, t.id DESC",
     )?;
@@ -210,7 +231,8 @@ pub fn list_all_tasks(conn: &Connection) -> Result<Vec<TaskRow>, rusqlite::Error
         "SELECT t.id, t.project_id, t.task_date, t.day_type, t.description, t.time_hours,
                 t.obsidian_uri, MAX(hl.logged_date) AS last_log_date
          FROM tasks t
-         LEFT JOIN hour_logs hl ON hl.task_id = t.id
+         LEFT JOIN hour_logs hl ON hl.task_id = t.id AND hl.deleted_at IS NULL
+         WHERE t.deleted_at IS NULL
          GROUP BY t.id
          ORDER BY COALESCE(MAX(hl.logged_date), t.task_date) DESC, t.id DESC",
     )?;
@@ -220,7 +242,7 @@ pub fn list_all_tasks(conn: &Connection) -> Result<Vec<TaskRow>, rusqlite::Error
 pub fn add_task_hours(conn: &Connection, task_id: i64, delta: f64) -> Result<(), rusqlite::Error> {
     let now = chrono::Utc::now().to_rfc3339();
     let n = conn.execute(
-        "UPDATE tasks SET time_hours = time_hours + ?1 WHERE id = ?2",
+        "UPDATE tasks SET time_hours = time_hours + ?1 WHERE id = ?2 AND deleted_at IS NULL",
         params![delta, task_id],
     )?;
     if n == 0 {
@@ -311,7 +333,7 @@ pub fn update_task(
     let uri = normalize_obsidian_uri(obsidian_input, &settings.default_obsidian_vault);
     let n = conn.execute(
         "UPDATE tasks SET project_id = ?1, task_date = ?2, day_type = ?3, description = ?4,
-         time_hours = ?5, obsidian_uri = ?6 WHERE id = ?7",
+         time_hours = ?5, obsidian_uri = ?6 WHERE id = ?7 AND deleted_at IS NULL",
         params![
             project_id,
             task_date,
@@ -328,9 +350,19 @@ pub fn update_task(
     Ok(())
 }
 
+/// Soft delete: flags the task and its hour logs with the same `deleted_at`.
 pub fn delete_task(conn: &Connection, id: i64) -> Result<(), rusqlite::Error> {
-    conn.execute("DELETE FROM tasks WHERE id = ?1", params![id])?;
-    Ok(())
+    let now = chrono::Utc::now().to_rfc3339();
+    let tx = conn.unchecked_transaction()?;
+    tx.execute(
+        "UPDATE hour_logs SET deleted_at = ?1 WHERE task_id = ?2 AND deleted_at IS NULL",
+        params![now, id],
+    )?;
+    tx.execute(
+        "UPDATE tasks SET deleted_at = ?1 WHERE id = ?2 AND deleted_at IS NULL",
+        params![now, id],
+    )?;
+    tx.commit()
 }
 
 fn is_likely_absolute_filesystem_path(s: &str) -> bool {
@@ -395,7 +427,7 @@ pub fn add_hour_log(
 ) -> Result<(), rusqlite::Error> {
     let now = chrono::Utc::now().to_rfc3339();
     let n = conn.execute(
-        "UPDATE tasks SET time_hours = time_hours + ?1 WHERE id = ?2",
+        "UPDATE tasks SET time_hours = time_hours + ?1 WHERE id = ?2 AND deleted_at IS NULL",
         params![hours, task_id],
     )?;
     if n == 0 {
@@ -418,7 +450,7 @@ pub fn list_hour_logs_for_task(
 ) -> Result<Vec<HourLogRow>, rusqlite::Error> {
     let mut stmt = conn.prepare(
         "SELECT id, task_id, project_id, logged_date, hours FROM hour_logs
-         WHERE task_id = ?1 ORDER BY logged_date DESC, id DESC",
+         WHERE task_id = ?1 AND deleted_at IS NULL ORDER BY logged_date DESC, id DESC",
     )?;
     let iter = stmt.query_map(params![task_id], |r| {
         Ok(HourLogRow {
@@ -432,18 +464,24 @@ pub fn list_hour_logs_for_task(
     iter.collect()
 }
 
+/// Soft delete: flags the log and subtracts its hours from the task total.
 pub fn delete_hour_log(conn: &Connection, id: i64) -> Result<(), rusqlite::Error> {
     let (task_id, hours): (i64, f64) = conn.query_row(
-        "SELECT task_id, hours FROM hour_logs WHERE id = ?1",
+        "SELECT task_id, hours FROM hour_logs WHERE id = ?1 AND deleted_at IS NULL",
         params![id],
         |r| Ok((r.get(0)?, r.get(1)?)),
     )?;
-    conn.execute(
+    let now = chrono::Utc::now().to_rfc3339();
+    let tx = conn.unchecked_transaction()?;
+    tx.execute(
         "UPDATE tasks SET time_hours = MAX(0, time_hours - ?1) WHERE id = ?2",
         params![hours, task_id],
     )?;
-    conn.execute("DELETE FROM hour_logs WHERE id = ?1", params![id])?;
-    Ok(())
+    tx.execute(
+        "UPDATE hour_logs SET deleted_at = ?1 WHERE id = ?2",
+        params![now, id],
+    )?;
+    tx.commit()
 }
 
 #[derive(Debug, Serialize, Clone)]
@@ -471,8 +509,8 @@ pub fn tasks_for_export_with_projects(
         "SELECT t.id, t.project_id, p.name, t.task_date, t.day_type, t.description,
                 t.time_hours, t.obsidian_uri
          FROM tasks t
-         JOIN projects p ON p.id = t.project_id
-         WHERE strftime('%Y-%m', t.task_date) = ?1
+         JOIN projects p ON p.id = t.project_id AND p.deleted_at IS NULL
+         WHERE strftime('%Y-%m', t.task_date) = ?1 AND t.deleted_at IS NULL
          ORDER BY t.task_date, t.id",
     )?;
     for m in months {
@@ -511,8 +549,8 @@ pub fn daily_hour_logs(
     let sql = format!(
         "SELECT hl.logged_date, hl.project_id, p.name AS project_name, SUM(hl.hours) AS total_hours
          FROM hour_logs hl
-         JOIN projects p ON p.id = hl.project_id
-         WHERE 1=1 {date_filter}
+         JOIN projects p ON p.id = hl.project_id AND p.deleted_at IS NULL
+         WHERE hl.deleted_at IS NULL {date_filter}
          GROUP BY hl.logged_date, hl.project_id
          ORDER BY hl.logged_date DESC, p.name COLLATE NOCASE",
         date_filter = date_filter,
@@ -561,8 +599,8 @@ pub fn monthly_hour_logs(
                     p.name AS project_name,
                     SUM(hl.hours) AS th
              FROM hour_logs hl
-             JOIN projects p ON p.id = hl.project_id
-             WHERE 1=1 {year_filter_logs}
+             JOIN projects p ON p.id = hl.project_id AND p.deleted_at IS NULL
+             WHERE hl.deleted_at IS NULL {year_filter_logs}
              GROUP BY ym, hl.project_id
              UNION ALL
              SELECT strftime('%Y-%m', t.task_date) AS ym,
@@ -570,9 +608,10 @@ pub fn monthly_hour_logs(
                     p.name AS project_name,
                     t.time_hours AS th
              FROM tasks t
-             JOIN projects p ON p.id = t.project_id
+             JOIN projects p ON p.id = t.project_id AND p.deleted_at IS NULL
              WHERE t.time_hours > 0
-               AND t.id NOT IN (SELECT DISTINCT task_id FROM hour_logs)
+               AND t.deleted_at IS NULL
+               AND t.id NOT IN (SELECT DISTINCT task_id FROM hour_logs WHERE deleted_at IS NULL)
                {year_filter_tasks}
          )
          GROUP BY ym, project_id

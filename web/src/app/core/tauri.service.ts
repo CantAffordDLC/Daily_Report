@@ -1,5 +1,6 @@
 import { Injectable, NgZone, inject } from '@angular/core';
 import { invoke as ipcInvoke } from '@tauri-apps/api/tauri';
+import { confirm as dialogConfirm } from '@tauri-apps/api/dialog';
 
 export interface ProjectRow {
   id: number;
@@ -148,6 +149,16 @@ export class TauriService {
 
   renameProject(id: number, name: string): Promise<void> {
     return this.invokeCmd('rename_project', { id, name });
+  }
+
+  /**
+   * Yes/no dialog. Use this instead of `window.confirm`: Tauri patches `window.confirm`
+   * to return a Promise (always truthy), so `if (!confirm(...))` never blocks.
+   */
+  async confirm(message: string): Promise<boolean> {
+    if (!isTauriRuntime()) return window.confirm(message);
+    const ok = await dialogConfirm(message, { title: 'Daily Report' });
+    return this.zone.run(() => ok);
   }
 
   deleteProject(id: number): Promise<void> {

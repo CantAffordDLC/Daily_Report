@@ -116,7 +116,7 @@ export class SettingsDialogComponent implements OnChanges {
 
   async restoreFromBackup(): Promise<void> {
     if (!this.importBackupPath) return;
-    if (!confirm(`Restore from:\n${this.importBackupPath}\n\nThis will replace all current data. Continue?`)) return;
+    if (!await this.tauri.confirm(`Restore from:\n${this.importBackupPath}\n\nThis will replace all current data. Continue?`)) return;
     this.importRestoring = true;
     this.importMessage = null;
     this.cdr.detectChanges();

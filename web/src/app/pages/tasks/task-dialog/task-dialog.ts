@@ -134,7 +134,7 @@ export class TaskDialogComponent implements OnInit, OnChanges {
         // Check if a note with this name already exists in the vault
         const existing = await this.tauri.findObsidianNote(this.projectId, name);
         if (existing) {
-          const link = confirm(
+          const link = await this.tauri.confirm(
             `A note "${name}.md" already exists in the vault.\n\nClick OK to link it, or Cancel to create a new one.`,
           );
           if (link) {
@@ -174,7 +174,7 @@ export class TaskDialogComponent implements OnInit, OnChanges {
           if (noteUri) {
             this.saved.emit();
             this.closed.emit();
-            const openNow = confirm(`✅ Nota criada com sucesso!\n\nClica OK para abrir "${name}" no Obsidian.`);
+            const openNow = await this.tauri.confirm(`✅ Nota criada com sucesso!\n\nClica OK para abrir "${name}" no Obsidian.`);
             if (openNow) {
               await this.tauri.openObsidianUri(noteUri);
             }
