@@ -505,13 +505,26 @@ pub fn tasks_for_export_with_projects(
         return Ok(Vec::new());
     }
     let mut all = Vec::new();
+    // Hours come from hour_logs (when the work was logged), one row per task per month,
+    // dated with the last log of that month. Same rules as monthly_hour_logs, so the
+    // export matches the Hours tab: legacy tasks with hours but no logs use task_date.
     let mut stmt = conn.prepare(
-        "SELECT t.id, t.project_id, p.name, t.task_date, t.day_type, t.description,
+        "SELECT t.id, hl.project_id, p.name, MAX(hl.logged_date), t.day_type, t.description,
+                SUM(hl.hours), t.obsidian_uri
+         FROM hour_logs hl
+         JOIN tasks t ON t.id = hl.task_id AND t.deleted_at IS NULL
+         JOIN projects p ON p.id = hl.project_id AND p.deleted_at IS NULL
+         WHERE strftime('%Y-%m', hl.logged_date) = ?1 AND hl.deleted_at IS NULL
+         GROUP BY t.id, hl.project_id
+         UNION ALL
+         SELECT t.id, t.project_id, p.name, t.task_date, t.day_type, t.description,
                 t.time_hours, t.obsidian_uri
          FROM tasks t
          JOIN projects p ON p.id = t.project_id AND p.deleted_at IS NULL
-         WHERE strftime('%Y-%m', t.task_date) = ?1 AND t.deleted_at IS NULL
-         ORDER BY t.task_date, t.id",
+         WHERE strftime('%Y-%m', t.task_date) = ?1
+           AND t.deleted_at IS NULL
+           AND t.time_hours > 0
+           AND t.id NOT IN (SELECT DISTINCT task_id FROM hour_logs WHERE deleted_at IS NULL)",
     )?;
     for m in months {
         let rows = stmt.query_map(params![m], |r| {
